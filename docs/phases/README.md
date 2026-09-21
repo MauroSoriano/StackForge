@@ -8,9 +8,9 @@ ARCHIVOS MODIFICADOS, CÓMO PROBARLO, QUÉ TESTS EXISTEN, QUÉ FALTA, QUÉ SIGUE
 | 0     | Requirements + Arch  | ✅ Base   | PHASE-00-scaffold.md       |
 | 1     | Project Setup        | ✅ Base   | (cubierto por PHASE-00)    |
 | 2     | Authentication       | ✅        | PHASE-02-authentication.md |
-| 3     | Database             | 🟡 Schema | —                          |
-| 4     | Learning Engine      | ⬜        | —                          |
-| 5     | Exercises            | ⬜        | —                          |
+| 3     | Database             | ✅        | PHASE-03-database.md      |
+| 4     | Learning Engine      | ✅        | PHASE-04-learning-engine.md |
+| 5     | Exercises            | ✅        | PHASE-05-exercises.md     |
 | 6     | Project Submission   | ⬜        | —                          |
 | 7     | AI Evaluation        | ⬜        | —                          |
 | 8     | Git/GitHub Learning  | ⬜        | —                          |
