@@ -4,6 +4,7 @@ import { AuthModule } from "./auth/auth.module.js";
 import { HealthModule } from "./health/health.module.js";
 import { CurriculumModule } from "./curriculum/curriculum.module.js";
 import { ProgressModule } from "./progress/progress.module.js";
+import { ExercisesModule } from "./exercises/exercises.module.js";
 import { PrismaModule } from "./prisma/prisma.module.js";
 
 @Module({
@@ -13,6 +14,7 @@ import { PrismaModule } from "./prisma/prisma.module.js";
     AuthModule,
     CurriculumModule,
     ProgressModule,
+    ExercisesModule,
     HealthModule,
   ],
 })
