@@ -1,0 +1,415 @@
+// StackForge — Prisma schema
+// Entidades derivadas del Prompt Maestro (§32 Base de datos).
+// En Prisma 7 la url NO se define aquí: vive en prisma.config.ts y en el adaptador del PrismaClient.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum UserRole {
+  STUDENT
+  ADMIN
+}
+
+enum TrackType {
+  JUNIOR
+  MID
+  SENIOR
+}
+
+enum ModuleState {
+  LOCKED
+  AVAILABLE
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum SubmissionStatus {
+  RECEIVED
+  PROCESSING
+  PASSED
+  PARTIAL
+  NEEDS_WORK
+  ERROR
+}
+
+enum RequirementType {
+  REQUIRED
+  OPTIONAL
+}
+
+enum Difficulty {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum AIProvider {
+  FREE
+  OPENAI
+  GEMINI
+  OPENROUTER
+  LOCAL
+}
+
+enum MentorMode {
+  LEARN
+  DEBUG
+  HINT
+  REVIEW
+  INTERVIEW
+  ARCHITECT
+}
+
+// ---------------------------------------------------------------------------
+// Usuario
+// ---------------------------------------------------------------------------
+
+model User {
+  id               String            @id @default(cuid())
+  email            String            @unique
+  passwordHash     String
+  name             String?
+  role             UserRole          @default(STUDENT)
+  profile          Profile?
+  portfolioProjects PortfolioProject[]
+  submissions      Submission[]
+  userProgress     UserProgress[]
+  studySessions    StudySession[]
+  userSkills       UserSkill[]
+  userAchievements UserAchievement[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+}
+
+model Profile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  githubUrl   String?
+  portfolioUrl String?
+  bio         String?
+  timezone    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ---------------------------------------------------------------------------
+// Contenido educativo: Track -> Module -> Lesson / Exercise / Project
+// ---------------------------------------------------------------------------
+
+model Track {
+  id          String     @id @default(cuid())
+  slug        String     @unique
+  title       String
+  description String?
+  type        TrackType
+  order       Int
+  modules     Module[]
+  userProgress UserProgress[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Module {
+  id                  String      @id @default(cuid())
+  trackId             String
+  track               Track       @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  slug                String
+  title               String
+  description         String?
+  order               Int
+  estimatedHours      Int?
+  lockedByDefault     Boolean     @default(false)
+  lessons             Lesson[]
+  projects            Project[]
+  gitLessons          GitLesson[]
+  gitExercises        GitExercise[]
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+
+  @@unique([trackId, order])
+  @@index([trackId])
+}
+
+model Lesson {
+  id             String     @id @default(cuid())
+  moduleId       String
+  module         Module     @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  slug           String
+  title          String
+  markdown       String
+  order          Int
+  durationMinutes Int?
+  exercises      Exercise[]
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  @@unique([moduleId, slug])
+  @@index([moduleId, order])
+}
+
+model Exercise {
+  id                   String                 @id @default(cuid())
+  lessonId             String?
+  lesson               Lesson?                @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  title                String
+  description          String?
+  instructions         String
+  order                Int?
+  difficulty           Difficulty             @default(BEGINNER)
+  maxAttempts          Int?
+  requirements         ExerciseRequirement[]
+  tests                ExerciseTest[]
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+
+  @@index([lessonId])
+}
+
+model ExerciseRequirement {
+  id          String  @id @default(cuid())
+  exerciseId  String
+  exercise    Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  description String
+  isMandatory Boolean @default(true)
+  order       Int?
+
+  @@index([exerciseId])
+}
+
+model ExerciseTest {
+  id          String   @id @default(cuid())
+  exerciseId  String
+  exercise    Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  name        String
+  command     String?
+  description String?
+  order       Int?
+
+  @@index([exerciseId])
+}
+
+model Project {
+  id            String              @id @default(cuid())
+  moduleId      String?
+  module        Module?             @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  slug          String
+  title         String
+  description   String?
+  objectives    String
+  durationHours Int?
+  order         Int?
+  difficulty    Difficulty          @default(INTERMEDIATE)
+  requirements  ProjectRequirement[]
+  submissions   Submission[]
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  @@index([moduleId, order])
+}
+
+model ProjectRequirement {
+  id                  String          @id @default(cuid())
+  projectId           String
+  project             Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  description         String
+  acceptanceCriteria  String?
+  kind                RequirementType @default(REQUIRED)
+  order               Int?
+
+  @@index([projectId])
+}
+
+// ---------------------------------------------------------------------------
+// Sistema de entrega y evaluación
+// ---------------------------------------------------------------------------
+
+model Submission {
+  id               String           @id @default(cuid())
+  projectId        String
+  project          Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  userId           String
+  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  attemptNumber    Int
+  status           SubmissionStatus @default(RECEIVED)
+  archiveKey       String?
+  archiveSizeBytes Int?
+  fileCount        Int?
+  result           Json?
+  submittedAt      DateTime         @default(now())
+  processedAt      DateTime?
+  files            SubmissionFile[]
+  feedbacks        AIFeedback[]
+
+  @@unique([projectId, userId, attemptNumber])
+  @@index([userId])
+  @@index([projectId])
+}
+
+model SubmissionFile {
+  id           String     @id @default(cuid())
+  submissionId String
+  submission   Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  path         String
+  sizeBytes    Int?
+  sha256       String?
+  excluded     Boolean    @default(false)
+
+  @@index([submissionId])
+}
+
+model AIFeedback {
+  id                   String           @id @default(cuid())
+  submissionId         String
+  submission           Submission       @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  provider             AIProvider       @default(FREE)
+  modelName            String?
+  status               String           @default("ok")
+  verdict              SubmissionStatus?
+  overallScore         Int?
+  requirementResults   Json?
+  codeQuality          String?
+  problemsFound        Json?
+  recommendations      Json?
+  nextSteps            String?
+  raw                  Json?
+  latencyMs            Int?
+  createdAt            DateTime         @default(now())
+
+  @@index([submissionId])
+}
+
+// ---------------------------------------------------------------------------
+// Progreso y habilidades
+// ---------------------------------------------------------------------------
+
+model UserProgress {
+  id          String       @id @default(cuid())
+  userId      String
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trackId     String
+  track       Track        @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  moduleId    String?
+  state       ModuleState  @default(LOCKED)
+  progress    Int          @default(0)
+  completedAt DateTime?
+  updatedAt   DateTime     @updatedAt
+
+  @@unique([userId, trackId, moduleId])
+  @@index([userId])
+}
+
+model Skill {
+  id          String  @id @default(cuid())
+  name        String  @unique
+  category    String?
+  description String?
+  userSkills  UserSkill[]
+}
+
+model UserSkill {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skillId     String
+  skill       Skill    @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  proficiency Int      @default(0)
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, skillId])
+  @@index([userId])
+}
+
+model StudySession {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  startedAt       DateTime @default(now())
+  endedAt         DateTime?
+  durationMinutes Int?
+
+  @@index([userId])
+}
+
+// ---------------------------------------------------------------------------
+// Educación Git/GitHub
+// ---------------------------------------------------------------------------
+
+model GitLesson {
+  id          String  @id @default(cuid())
+  moduleId    String?
+  module      Module? @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  title       String
+  command     String?
+  description String
+  order       Int
+  level       Int     @default(1)
+
+  @@index([moduleId, order])
+}
+
+model GitExercise {
+  id          String  @id @default(cuid())
+  moduleId    String?
+  module      Module? @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  title       String
+  description String
+  steps       Json
+  order       Int
+
+  @@index([moduleId, order])
+}
+
+// ---------------------------------------------------------------------------
+// Portfolio
+// ---------------------------------------------------------------------------
+
+model PortfolioProject {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title        String
+  description  String?
+  githubUrl    String?
+  liveUrl      String?
+  technologies String[] @default([])
+  verified     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([userId])
+}
+
+// ---------------------------------------------------------------------------
+// Logros
+// ---------------------------------------------------------------------------
+
+model Achievement {
+  id             String            @id @default(cuid())
+  slug           String            @unique
+  title          String
+  description    String?
+  icon           String?
+  users          UserAchievement[]
+}
+
+model UserAchievement {
+  id            String      @id @default(cuid())
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievementId String
+  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+  awardedAt     DateTime    @default(now())
+
+  @@unique([userId, achievementId])
+}
