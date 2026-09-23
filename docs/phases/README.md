@@ -15,7 +15,7 @@ ARCHIVOS MODIFICADOS, CÓMO PROBARLO, QUÉ TESTS EXISTEN, QUÉ FALTA, QUÉ SIGUE
 | 7     | AI Evaluation        | ⬜        | —                          |
 | 8     | Git/GitHub Learning  | ⬜        | —                          |
 | 9     | Portfolio            | ⬜        | —                          |
-| 10    | AI Mentor            | ⬜        | —                          |
+| 10    | AI Mentor (solo gratis) | ⏳ Plan | PHASE-08-ai-mentor.md       |
 | 11    | Admin                | ⬜        | —                          |
 | 12    | Testing              | 🟡 Base   | —                          |
 | 13    | Security             | ⬜        | —                          |
