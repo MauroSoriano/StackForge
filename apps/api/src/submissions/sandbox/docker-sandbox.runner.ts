@@ -1,9 +1,7 @@
 ﻿import { execFile } from "node:child_process";
-import { randomUUID } from "node:crypto";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { setTimeout as sleep } from "node:timers/promises";
 import type { SandboxRunner, SandboxRunResult } from "./sandbox-runner.interface.js";
 
 const RUN_IMAGE = process.env.STACKFORGE_SANDBOX_IMAGE ?? "node:22-alpine";

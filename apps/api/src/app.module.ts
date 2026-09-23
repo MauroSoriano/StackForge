@@ -4,6 +4,7 @@ import { AuthModule } from "./auth/auth.module.js";
 import { HealthModule } from "./health/health.module.js";
 import { CurriculumModule } from "./curriculum/curriculum.module.js";
 import { ProgressModule } from "./progress/progress.module.js";
+import { SubmissionsModule } from "./submissions/submissions.module.js";
 import { ExercisesModule } from "./exercises/exercises.module.js";
 import { PrismaModule } from "./prisma/prisma.module.js";
 
@@ -15,6 +16,7 @@ import { PrismaModule } from "./prisma/prisma.module.js";
     CurriculumModule,
     ProgressModule,
     ExercisesModule,
+    SubmissionsModule,
     HealthModule,
   ],
 })
