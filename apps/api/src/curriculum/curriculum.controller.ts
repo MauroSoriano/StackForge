@@ -7,6 +7,16 @@ import { CurriculumService } from "./curriculum.service.js";
 export class CurriculumController {
   constructor(private readonly curriculum: CurriculumService) {}
 
+  @Get("syllabus")
+  @ApiOperation({
+    summary: "Syllabus completo del curso en texto",
+    description:
+      "Todo el curso navegable en texto plano (tracks → módulos → lecciones con markdown → ejercicios). Entorno de aprendizaje 100% texto, sin videos.",
+  })
+  getSyllabus() {
+    return this.curriculum.getSyllabus();
+  }
+
   @Get("tracks")
   @ApiOperation({ summary: "Lista los tracks del currículum", description: "Acceso público lectura." })
   listTracks() {

@@ -25,6 +25,57 @@ export class CurriculumService {
     });
   }
 
+  /**
+   * Syllabus completo del curso como texto plano navegable (fase 7). Devuelve
+   * track → módulos → lecciones (markdown) → ejercicios, sin videos: todo el
+   * curso está disponible para leer en la app.
+   */
+  getSyllabus() {
+    return this.prisma.track.findMany({
+      orderBy: { order: "asc" },
+      select: {
+        id: true,
+        slug: true,
+        title: true,
+        description: true,
+        type: true,
+        order: true,
+        modules: {
+          select: {
+            id: true,
+            slug: true,
+            title: true,
+            description: true,
+            order: true,
+            estimatedHours: true,
+            lessons: {
+              select: {
+                id: true,
+                slug: true,
+                title: true,
+                markdown: true,
+                order: true,
+                durationMinutes: true,
+                exercises: {
+                  select: {
+                    id: true,
+                    title: true,
+                    instructions: true,
+                    difficulty: true,
+                    order: true,
+                  },
+                  orderBy: [{ order: "asc" }, { id: "asc" }],
+                },
+              },
+              orderBy: [{ order: "asc" }, { id: "asc" }],
+            },
+          },
+          orderBy: [{ order: "asc" }, { id: "asc" }],
+        },
+      },
+    });
+  }
+
   async getTrack(slug: string) {
     const track = await this.prisma.track.findUnique({
       where: { slug },
