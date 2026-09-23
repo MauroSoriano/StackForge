@@ -50,19 +50,15 @@ extensión posterior opcional.
   del envío en modo REVIEW con un modelo gratuito; guarda `AIFeedback`.
 - `GET /submissions/:id/mentor` → lista los feedbacks del envío (verificación).
 
-## Proveedores/modelos candidatos (confirmar gratuidad ANTES de usar)
-Según revisión externa (OpenRouter / Google AI Studio / Groq, precio 2026):
-1. **Google AI Studio — Gemini Flash (gratis, sin tarjeta)** — alto límite diario
-   de prompts, contexto largo, multimodal texto. Confirmación pendiente de su
-   página oficial exacta al momento de implementar.
-2. **OpenRouter — router `openrouter/free` + modelos con sufijo `:free`** — sin
-   tarjeta, 20 RPM en free; fallback automático entre varios modelos gratuitos.
-   Confirmación pendiente.
-3. **Groq — gpt-oss / Qwen free tier** — rápido; bajo cuota (30 RPM, 1000/día).
-   Confirmación pendiente.
-(La elección final de 1 proveedor base + fallbacks se hace al implementar, y
-cada `modelName` elegido se valida como GRATIS contra la doc oficial antes de
-commitear — se registra la URL + fecha en la sección "Proveedores confirmados".)
+## Proveedores/modelos candidatos (gratuidad VERIFICADA — ver tabla arriba)
+1. **OpenRouter — router `openrouter/free` + sufijo `:free`** → ✅ CONFIRMADO
+   gratis (ago 2026). Default propuesto por robustez (rota modelos, sin elección
+   manual, $0). Es el único en latencia variable de verdad, que a esta app no
+   le importa.
+2. **Gemini API (Google AI Studio) free tier** → ✅ CONFIRMADO gratis (ago 2026);
+   input/output sin cargo. Fallback.
+3. **Groq free tier** → ✅ CONFIRMADO gratis (ago 2026); 30 RPM + techos diarios.
+   Fallback (rápido, pero techos bajos).
 
 ## Contracto con el runner de la fase 06
 El Mentor escribe su JSON de salida como archivo de texto (p. ej.
@@ -85,10 +81,26 @@ persistir la devolución como archivo*; por defecto la devolución vive en
 3. Spec E2E (con un modelo gratuito real o mock marcado FREE), lint/typecheck/
    test/build verdes, doc, commit, push.
 
-## Proveedores confirmados como GRATIS (se llena al implementar)
-| Modelo | URL doc oficial | Confirmado (fecha) | Notas |
-|---|---|---|---|
-| *(pendiente)* | — | — | — |
+## Proveedores CONFIRMADOS como GRATIS (verificado agosto 2026)
+| Proveedor | Cómo consumirlo gratis | URL doc oficial | Confirmado (fecha) | Notas |
+|---|---|---|---|---|
+| **OpenRouter** | Router `openrouter/free` o modelo `:free` (p. ej. `meta-llama/llama-3.2-3b-instruct:free`) — costo **$0**, sin tarjeta | https://openrouter.ai/docs/guides/routing/routers/free-router y https://openrouter.ai/docs/guides/routing/model-variants/free | ✅ 2026-08 | El router rota a modelos gratuitos automáticamente según capacidades (tooling, struct output). Límites de tasa más bajos y latencia variable (no importa: la prioridad sigue siendo $0). Opcional `:free` por modelo para no depender del azar. |
+| **Gemini API** | Free tier de Google: input/output **gratis de cargo** (no cobra por token) hasta límites de tasa del modelo gratis | https://ai.google.dev/gemini-api/docs/pricing (Free Tier: "Free of charge") | ✅ 2026-08 | La página de pricing oficial lista input/output gratis (Gemini 3.x free tier). Caveats: empieza en Free Tier (no te pide tarjeta); tasa limitada por día; si vinculas una key de pago NO lo hagas (mantener gratis puro). |
+| **Groq** | Free tier: API key gratis sin pago; 30 RPM y techos diarios (~1.000 RPD, tokens/día según modelo) | https://console.groq.com/docs/rate-limits | ✅ 2026-08 | Confirmado gratis (sin tarjeta). Ojo: límites por organización, no por key; vigilar headers `x-ratelimit-remaining-*` y manejar 429. Tier free = sin SLA. |
+
+### Decisión de default (propuesta — falta confirmación del usuario)
+- **Proveedor principal**: **OpenRouter `openrouter/free`** — un solo punto de
+  integración, costo $0, rota automáticamente entre modelos gratuitos (el más
+  robusto para no quedar atado a un solo modelo que se caiga).
+- **Fallbacks gratuitos**: **Gemini free tier** y **Groq free tier**.
+- Regla que se mantiene: cada `modelName` que entre al código sigue estando
+  *confirmado gratis* contra la doc oficial (ya hecho: agosto 2026, URLs arriba).
+- (Necesito "tu confirmación" para fijar one proveedor base + fallbacks antes de
+  escribir el `MentorService`. No implemento ninguno sin decir cuál se usa.)
+
+## Historial modificado
+- Fase 08: proveedores verificados gratis (OpenRouter/Gemini/Groq, ago-2026) y
+  default propuesto `openrouter/free` + fallbacks, sin tocar código (sigue ⏳ Plan).
 
 ## Historial
 - Fase 08 creada como plan (2026-09-12): restricción "solo gratuitos + verificar
