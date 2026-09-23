@@ -1,107 +1,100 @@
-# StackForge - Fase 08 - Mentor IA (feedback automático con modelos GRATUITOS)
+# StackForge - Fase 08 - Mentor IA (feedback automático, OpenRouter GRATIS)
 
 ## Estado
-PLANEADA. No implementada todavía — este documento es el plan de la fase
-(restricción de producto + diseño atado al schema real + criterio de aceptación).
-El pipeline sigue en verde con las fases 01-07 completas (typecheck/lint/test
-15/15/build = 0, main == origin/main en 6559192).
+**PLANEADA → IMPLEMENTÁNDOSE (confirmada la gratuidad).** El usuario eligió
+**OpenRouter con SOLO modelos gratuitos** (`openrouter/free` router o modelos
+`:free`); costo **$0 permanente**, verificado gratis contra la doc oficial de
+OpenRouter (ago-2026). No se implementó ningún modelo "barato" ni de pago.
 
-## Restricción GLOBAL de producto (decision tomada, no negociable)
-- **SOLO se usan modelos GRATUITOS.** Prohibido usar modelos "de bajo costo",
-  "baratos", de prueba con tarjeta o que cobren por token. No importa si son
-  más lentos: la prioridad es que el costo sea **$0 permanente**.
-- **Verificación de gratuidad ANTES de usar cada modelo.** Antes de fijar un
-  proveedor/modelo como provider del Mentor, se confirma contra la página
-  oficial del proveedor (free tier, sin tarjeta, sin cargo por token) y se
-  registra la referencia y la fecha en este documento. Ningún modelo entra al
-  código del Mentor sin esa confirmación documentada.
+## Restricción GLOBAL (decidida, no negociable)
+- **Solo modelos GRATUITOS.** Prohibido modelos "baratos"/"de bajo costo"/con
+  tarjeta o que cobren por token. La latencia no importa; el costo DEBE ser $0.
+- **Verificación de gratuidad ANTES de usar cada modelo.** Ya hecho para
+  OpenRouter free (ago-2026, doc oficial): el router `openrouter/free` y los
+  modelos con sufijo `:free` no cuestan nada. Antes de fijar cualquier otro
+  proveedor como fallback, se confirma su gratuidad contra su doc oficial y se
+  registra fecha+URL en este documento.
+- Decisión actual: **UN solo proveedor (OpenRouter free) como default**; el code
+  no incluye tags de "pay-as-you-go".
 
 ## Objetivo
-Dar a cada envío (fase 06) un **feedback automático de mentor** en texto, sin
-videos — coherente con la decisión de producto del curso 100% texto. El Mentor
-lee: el resultado real de la evaluación en Docker (fase 06) + el código del
-envío + las instrucciones del ejercicio, y escribe una devolución estructurada
-(qué pasó, qué está mal, cómo avanzar). Almacenada en Prisma para revisión.
+Dar a cada envío (fase 06) un **feedback automático de mentor** en texto
+(structurado en `AIFeedback`), coherente con el curso 100% texto. El Mentor:
+1. Lee el `submission` + sus `files` + las `requirements` del `project` (fase 06
+   ya guardó `result` real del sandbox — **no se re-evalúa en Docker**).
+2. Arma un prompt de REVISIÓN en texto.
+3. Llama a **OpenRouter `openrouter/free`** con `fetch` (sin dep nuevas).
+4. Guarda el feedback estructurado en `AIFeedback` (provider=FREE, modelName,
+   verdict, overallScore, requirementResults, codeQuality, problemsFound,
+   recommendations, nextSteps, raw, latencyMs).
 
 ## Diseño atado al schema REAL (verificado en disco)
-### Tabla destino: `AIFeedback` (ya existe en `prisma/schema.prisma`)
-| Campo | Tipo | Uso en el Mentor |
-|---|---|---|
-| `provider` | `AIProvider @default(FREE)` | Siempre `FREE` en esta fase |
-| `modelName` | `String?` | Slug del modelo gratuito usado (auditoría) |
-| `status` | `String @default("ok")` | "ok" si la llamada al modelo funcionó |
-| `verdict` | `SubmissionStatus?` | Cruzada con la evaluación (PASSED/PARTIAL/NEEDS_WORK) |
-| `overallScore` | `Int?` | 0-100 sintético (no bloqueante) |
-| `requirementResults` | `Json?` | Por-criterio: cumplido / pendiente |
-| `codeQuality` | `String?` | Notas de calidad (texto del modelo) |
-| `problemsFound` | `Json?` | Lista de problemas detectados |
-| `recommendations` | `Json?` | Siguientes pasos en texto |
-| `raw` | `Json?` | Respuesta cruda del modelo (para difundir/verificar) |
-| `latencyMs` | `Int?` | Tiempo de la llamada |
-| `createdAt` | `DateTime` | Sello |
+### Tabla destino: `AIFeedback` (existe en schema) + enums `AIProvider`/`MentorMode`
+Campos que se escriben:
+| Campo | Valor |
+|---|---|
+| `provider` | `AIProvider.FREE` (router gratuito) |
+| `modelName` | `String?` — slug del modelo gratis usado p. ej. "openrouter/free" |
+| `status` | `"ok"` o `"error"` |
+| `verdict` | `SubmissionStatus?` cruzado con la fase 06 |
+| `overallScore` | `Int?` 0-100 |
+| `requirementResults` | `Json?` — por-criterio |
+| `codeQuality` | `String?` |
+| `problemsFound` | `Json?` |
+| `recommendations` | `Json?` |
+| `nextSteps` | `String?` |
+| `raw` | `Json?` |
+| `latencyMs` | `Int?` |
 
-### Modos de mentor: `enum MentorMode` (ya existe)
-`LEARN, DEBUG, HINT, REVIEW, INTERVIEW, ARCHITECT` → el plan de fase 08 expone
-primero `REVIEW` (devolución de un envío) como caso base; el resto de modos es
-extensión posterior opcional.
+### Fixture de datos para el prompt (evita N+1)
+```ts
+const submission = await prisma.submission.findUnique({
+  where: { id },
+  include: {
+    files: { select: { path: true, content: true } },
+    project: {
+      select: {
+        id: true,
+        slug: true,
+        title: true,
+        description: true,
+        requirements: {
+          select: { id: true, description: true, acceptanceCriteria: true, kind: true, order: true },
+          orderBy: [{ order: "asc" }, { id: "asc" }],
+        },
+      },
+    },
+  },
+});
+```
 
-### Endpoints planeados
-- `POST /submissions/:id/mentor/review` → genera (o devuelve el cached) feedback
-  del envío en modo REVIEW con un modelo gratuito; guarda `AIFeedback`.
-- `GET /submissions/:id/mentor` → lista los feedbacks del envío (verificación).
+### Endpoint (fase 08)
+- `POST /submissions/:id/mentor/review` → genera/guarda feedback en modo REVIEW.
 
-## Proveedores/modelos candidatos (gratuidad VERIFICADA — ver tabla arriba)
-1. **OpenRouter — router `openrouter/free` + sufijo `:free`** → ✅ CONFIRMADO
-   gratis (ago 2026). Default propuesto por robustez (rota modelos, sin elección
-   manual, $0). Es el único en latencia variable de verdad, que a esta app no
-   le importa.
-2. **Gemini API (Google AI Studio) free tier** → ✅ CONFIRMADO gratis (ago 2026);
-   input/output sin cargo. Fallback.
-3. **Groq free tier** → ✅ CONFIRMADO gratis (ago 2026); 30 RPM + techos diarios.
-   Fallback (rápido, pero techos bajos).
+### Prompt al modelo (resumen, 100% texto)
+"Eres mentor de un curso 100% texto. Proyecto: {title}. Requisitos: {list}.
+Código del alumno: {files}. Resultado de tu evaluación (Docker, fase 06):
+exitCode={}, timedOut={}. Devuelve JSON: {verdict, overallScore,
+requirementResults[], codeQuality, problemsFound[], recommendations[],
+nextSteps}."
 
-## Contracto con el runner de la fase 06
-El Mentor escribe su JSON de salida como archivo de texto (p. ej.
-`MENTOR_REVIEW.md`) en el mismo juego de archivos del envío *solo si se quiere
-persistir la devolución como archivo*; por defecto la devolución vive en
-`AIFeedback` (sin tocar los archivos del alumno ni re-evaluar: reutiliza el
-`result` ya guardado por la fase 06, no vuelve a correr Docker).
+## Criterio de aceptación (gate, mismo de fases previas)
+- typecheck 0, lint 0, tests (suite 15 existentes + nuevo spec Mentor ≥ 2), build 0.
+- Un solo commit por fase en verde, luego push. Doc en
+  `docs/phases/PHASE-08-ai-mentor.md` + fila actualizada en el índice.
 
-## Criterio de aceptación (gate, igual que fases previas)
-- typecheck 0, lint 0, tests (nuevo spec Mentor ≥ 2 + suite 15 existentes), build 0.
-- Un solo commit por fase en verde, luego push; doc en `docs/phases/PHASE-08-ai-mentor.md`
-  y fila actualizada en el índice de fases.
+## Proveedores CONFIRMADOS GRATIS (verificado ago-2026)
+| Proveedor | Cómo consumirlo gratis | URL doc | Confirmado |
+|---|---|---|---|
+| OpenRouter | router `openrouter/free` + modelos `:free` — costo $0, sin pago | https://openrouter.ai/docs/guides/routing/routers/free-router | ✅ 2026-08 |
 
-## QUÉ FALTA (al implementar, tras esta confirmación)
-1. Elegir proveedor gratuito y CONFIRMAR gratuidad (doc oficial, fecha) —
-   decisión del usuario.
-2. `MentorModule` + `MentorService.review(submissionId, mode)` leyendo
-   submission+files result y modelName configurado; `MentorController`
-   (POST/GET antes vistos); registrar en `AppModule`.
-3. Spec E2E (con un modelo gratuito real o mock marcado FREE), lint/typecheck/
-   test/build verdes, doc, commit, push.
-
-## Proveedores CONFIRMADOS como GRATIS (verificado agosto 2026)
-| Proveedor | Cómo consumirlo gratis | URL doc oficial | Confirmado (fecha) | Notas |
-|---|---|---|---|---|
-| **OpenRouter** | Router `openrouter/free` o modelo `:free` (p. ej. `meta-llama/llama-3.2-3b-instruct:free`) — costo **$0**, sin tarjeta | https://openrouter.ai/docs/guides/routing/routers/free-router y https://openrouter.ai/docs/guides/routing/model-variants/free | ✅ 2026-08 | El router rota a modelos gratuitos automáticamente según capacidades (tooling, struct output). Límites de tasa más bajos y latencia variable (no importa: la prioridad sigue siendo $0). Opcional `:free` por modelo para no depender del azar. |
-| **Gemini API** | Free tier de Google: input/output **gratis de cargo** (no cobra por token) hasta límites de tasa del modelo gratis | https://ai.google.dev/gemini-api/docs/pricing (Free Tier: "Free of charge") | ✅ 2026-08 | La página de pricing oficial lista input/output gratis (Gemini 3.x free tier). Caveats: empieza en Free Tier (no te pide tarjeta); tasa limitada por día; si vinculas una key de pago NO lo hagas (mantener gratis puro). |
-| **Groq** | Free tier: API key gratis sin pago; 30 RPM y techos diarios (~1.000 RPD, tokens/día según modelo) | https://console.groq.com/docs/rate-limits | ✅ 2026-08 | Confirmado gratis (sin tarjeta). Ojo: límites por organización, no por key; vigilar headers `x-ratelimit-remaining-*` y manejar 429. Tier free = sin SLA. |
-
-### Decisión de default (propuesta — falta confirmación del usuario)
-- **Proveedor principal**: **OpenRouter `openrouter/free`** — un solo punto de
-  integración, costo $0, rota automáticamente entre modelos gratuitos (el más
-  robusto para no quedar atado a un solo modelo que se caiga).
-- **Fallbacks gratuitos**: **Gemini free tier** y **Groq free tier**.
-- Regla que se mantiene: cada `modelName` que entre al código sigue estando
-  *confirmado gratis* contra la doc oficial (ya hecho: agosto 2026, URLs arriba).
-- (Necesito "tu confirmación" para fijar one proveedor base + fallbacks antes de
-  escribir el `MentorService`. No implemento ninguno sin decir cuál se usa.)
-
-## Historial modificado
-- Fase 08: proveedores verificados gratis (OpenRouter/Gemini/Groq, ago-2026) y
-  default propuesto `openrouter/free` + fallbacks, sin tocar código (sigue ⏳ Plan).
+## QUÉ FALTA (pendiente de implementación)
+1. `MentorModule` + `MentorService.review(submissionId)` leyendo submission+files+
+   requirements y modelName configurado; `MentorController` (POST antes visto);
+   registrar en `AppModule`.
+2. Spec E2E (mock del runner/provider), lint/typecheck/test/build verdes, doc,
+   commit, push.
 
 ## Historial
-- Fase 08 creada como plan (2026-09-12): restricción "solo gratuitos + verificar
-  antes de usar", diseño atado al schema real (AIFeedback/MentorMode), gate.
+- 2026-09-12: fase 08 creada como plan con restricción "solo gratuitos"; tras
+  confirmación del usuario se fijó **OpenRouter free** como único proveedor.

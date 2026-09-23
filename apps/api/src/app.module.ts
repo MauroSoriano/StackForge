@@ -1,11 +1,12 @@
-import { Module } from "@nestjs/common";
+﻿import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { AuthModule } from "./auth/auth.module.js";
 import { HealthModule } from "./health/health.module.js";
 import { CurriculumModule } from "./curriculum/curriculum.module.js";
 import { ProgressModule } from "./progress/progress.module.js";
-import { SubmissionsModule } from "./submissions/submissions.module.js";
 import { ExercisesModule } from "./exercises/exercises.module.js";
+import { SubmissionsModule } from "./submissions/submissions.module.js";
+import { MentorModule } from "./mentor/mentor.module.js";
 import { PrismaModule } from "./prisma/prisma.module.js";
 
 @Module({
@@ -17,6 +18,7 @@ import { PrismaModule } from "./prisma/prisma.module.js";
     ProgressModule,
     ExercisesModule,
     SubmissionsModule,
+    MentorModule,
     HealthModule,
   ],
 })
