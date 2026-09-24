@@ -75,4 +75,96 @@ export const api = {
   logout: () => request<void>("/auth/logout", { method: "POST" }),
 
   me: () => request<SafeUser>("/auth/me"),
+
+  listTracks: () =>
+    request<
+      Array<{
+        id: string;
+        slug: string;
+        title: string;
+        description: string | null;
+        type: "JUNIOR" | "MID" | "SENIOR";
+        order: number;
+        _count: { modules: number };
+      }>
+    >("/curriculum/tracks"),
+
+  getTrack: (slug: string) =>
+    request<{
+      id: string;
+      slug: string;
+      title: string;
+      description: string | null;
+      type: "JUNIOR" | "MID" | "SENIOR";
+      order: number;
+      modules: Array<{
+        id: string;
+        slug: string;
+        title: string;
+        description: string | null;
+        order: number;
+        estimatedHours: number | null;
+        lockedByDefault: boolean;
+        _count: { lessons: number };
+      }>;
+    }>(`/curriculum/tracks/${slug}`),
+
+  getLesson: (id: string) =>
+    request<{
+      id: string;
+      slug: string;
+      title: string;
+      markdown: string;
+      order: number;
+      durationMinutes: number | null;
+      module: {
+        id: string;
+        title: string;
+        slug: string;
+        track: { slug: string; title: string };
+      };
+      exercises: Array<{
+        id: string;
+        title: string;
+        description: string | null;
+        instructions: string;
+        order: number | null;
+        difficulty: "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
+        maxAttempts: number | null;
+        _count: { tests: number };
+      }>;
+    }>(`/curriculum/lessons/${id}`),
+
+  getSyllabus: () =>
+    request<{
+      id: string;
+      slug: string;
+      title: string;
+      description: string | null;
+      type: "JUNIOR" | "MID" | "SENIOR";
+      order: number;
+      modules: Array<{
+        id: string;
+        slug: string;
+        title: string;
+        description: string | null;
+        order: number;
+        estimatedHours: number | null;
+        lessons: Array<{
+          id: string;
+          slug: string;
+          title: string;
+          markdown: string;
+          order: number;
+          durationMinutes: number | null;
+          exercises: Array<{
+            id: string;
+            title: string;
+            instructions: string;
+            difficulty: string;
+            order: number | null;
+          }>;
+        }>;
+      }>;
+    }>("/curriculum/syllabus"),
 };

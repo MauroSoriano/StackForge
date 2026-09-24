@@ -7,7 +7,7 @@ export function proxy(request: NextRequest) {
   const session = request.cookies.get(ACCESS_TOKEN_COOKIE);
   if (!session) {
     const url = request.nextUrl.clone();
-    url.pathname = "/auth/login";
+    url.pathname = "/login";
     url.searchParams.set("next", request.nextUrl.pathname);
     return NextResponse.redirect(url);
   }

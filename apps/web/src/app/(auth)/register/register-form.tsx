@@ -77,7 +77,7 @@ export function RegisterForm() {
       </div>
 
       <p className="auth-alt">
-        ¿Ya tienes cuenta? <Link href="/auth/login">Entra aquí</Link>
+        ¿Ya tienes cuenta? <Link href="/login">Entra aquí</Link>
       </p>
     </form>
   );

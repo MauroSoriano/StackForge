@@ -19,8 +19,8 @@ export function LoginForm() {
     setLoading(true);
     try {
       await api.login({ email, password });
-      const next = searchParams.get("next");
-      router.replace(next && next.startsWith("/") ? next : "/");
+const next = searchParams.get("next");
+router.replace(next && next.startsWith("/") ? next : "/dashboard");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Error inesperado");
       setLoading(false);
@@ -65,7 +65,7 @@ export function LoginForm() {
 
       <p className="auth-alt">
         ¿No tienes cuenta?{" "}
-        <Link href="/auth/register">Crea una gratis</Link>
+        <Link href="/register">Crea una gratis</Link>
       </p>
     </form>
   );

@@ -83,7 +83,7 @@ export default function Home() {
             <a href="#ia">IA</a>
             <a href="#github">GitHub</a>
             <a href="#faq">FAQ</a>
-            <a href="/auth/login">Entrar</a>
+            <a href="/login">Entrar</a>
           </div>
           <a className="navbtn" href="#start">
             Empezar

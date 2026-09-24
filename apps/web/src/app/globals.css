@@ -586,14 +586,120 @@ footer {
 }
 
 .dash-role {
-  display: inline-block;
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  font-weight: 800;
-  color: var(--accent2);
-  border: 1px solid rgba(33, 212, 253, 0.3);
-  border-radius: 999px;
-  padding: 3px 10px;
-  margin-top: 12px;
+display: inline-block;
+font-size: 11px;
+text-transform: uppercase;
+letter-spacing: 1px;
+font-weight: 800;
+color: var(--accent2);
+border: 1px solid rgba(33, 212, 253, 0.3);
+border-radius: 999px;
+padding: 3px 10px;
+margin-top: 12px;
+}
+
+/* Ruta de estudio */
+.track-head {
+margin: 26px 0 14px;
+}
+
+.track-head h2 {
+font-size: 26px;
+margin: 8px 0 4px;
+}
+
+.track-head p {
+color: var(--muted);
+margin: 0 0 10px;
+}
+
+.mod-title {
+font-size: 16px;
+color: var(--accent2);
+margin: 22px 0 10px;
+letter-spacing: 0.4px;
+}
+
+.lesson-card {
+display: flex;
+align-items: center;
+gap: 14px;
+text-decoration: none;
+transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.lesson-card:hover {
+border-color: var(--accent2);
+transform: translateX(4px);
+}
+
+.lesson-title {
+flex: 1;
+font-weight: 600;
+color: var(--text);
+}
+
+/* Lección */
+.lesson {
+max-width: 860px;
+}
+
+.markdown {
+line-height: 1.7;
+color: var(--text);
+margin: 28px 0;
+}
+
+.markdown h3,
+.markdown h4 {
+margin: 26px 0 10px;
+color: var(--text);
+}
+
+.markdown h3 {
+font-size: 22px;
+}
+
+.markdown h4 {
+font-size: 18px;
+}
+
+.markdown p {
+margin: 12px 0;
+}
+
+.markdown pre,
+.markdown code {
+background: rgba(255, 255, 255, 0.04);
+border: 1px solid rgba(255, 255, 255, 0.08);
+border-radius: 8px;
+}
+
+.markdown pre {
+padding: 14px 16px;
+overflow-x: auto;
+margin: 16px 0;
+}
+
+.markdown code {
+font-family: "JetBrains Mono", ui-monospace, monospace;
+font-size: 13px;
+padding: 2px 5px;
+}
+
+.markdown pre code {
+padding: 0;
+border: none;
+background: none;
+}
+
+.markdown .md-bullet {
+padding-left: 6px;
+}
+
+.md-instructions {
+white-space: pre-wrap;
+color: var(--muted);
+font-size: 14px;
+margin-top: 8px;
 }
