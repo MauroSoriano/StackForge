@@ -10,11 +10,15 @@ export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "/api";
 /** Nombre de la cookie httpOnly con el access token (coincide con la API). */
 export const ACCESS_TOKEN_COOKIE = "stackforge_at";
 
+/** Tiempo m��ximo de espera de una petici��n (evita el bot��n cargando eterno). */
+const REQUEST_TIMEOUT_MS = 15000;
+
 export interface SafeUser {
   id: string;
   email: string;
   name: string | null;
   role: "STUDENT" | "ADMIN";
+  avatarUrl: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -37,15 +41,25 @@ interface RequestOptions {
 }
 
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, {
-    method: options.method ?? "GET",
-    credentials: "include",
-    cache: "no-store",
-    headers: options.body
-      ? { "Content-Type": "application/json" }
-      : undefined,
-    body: options.body ? JSON.stringify(options.body) : undefined,
-  });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}${path}`, {
+      method: options.method ?? "GET",
+      credentials: "include",
+      cache: "no-store",
+      headers: options.body
+        ? { "Content-Type": "application/json" }
+        : undefined,
+      body: options.body ? JSON.stringify(options.body) : undefined,
+      signal: controller.signal,
+    });
+  } catch {
+    throw new ApiError(0, "No se pudo conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.");
+  } finally {
+    clearTimeout(timer);
+  }
 
   if (res.status === 204) {
     return undefined as T;
@@ -76,6 +90,55 @@ export const api = {
   logout: () => request<void>("/auth/logout", { method: "POST" }),
 
   me: () => request<SafeUser>("/auth/me"),
+
+  updateProfile: (data: { name?: string; avatarUrl?: string }) =>
+    request<SafeUser>("/auth/profile", { method: "PATCH", body: data }),
+
+  getMyProgress: () =>
+    request<{
+      tracks: Array<{
+        id: string;
+        slug: string;
+        title: string;
+        description: string | null;
+        type: "JUNIOR" | "MID" | "SENIOR";
+        order: number;
+        modules: Array<{
+          id: string;
+          slug: string;
+          title: string;
+          order: number;
+          lessons: Array<{ id: string; title: string; order: number }>;
+        }>;
+        _count: { modules: number };
+      }>;
+      progress: Array<{
+        id: string;
+        trackId: string;
+        moduleId: string | null;
+        state: "LOCKED" | "AVAILABLE" | "IN_PROGRESS" | "COMPLETED";
+        progress: number;
+        completedAt: string | null;
+      }>;
+      lessonProgress: Array<{
+        id: string;
+        lessonId: string;
+        startedAt: string;
+        completedAt: string | null;
+      }>;
+    }>("/progress"),
+
+  startLesson: (lessonId: string) =>
+    request<{ id: string; lessonId: string; startedAt: string }>(
+      `/progress/lessons/${lessonId}/start`,
+      { method: "POST" },
+    ),
+
+  completeLesson: (lessonId: string) =>
+    request<{ completed: string; moduleId: string; progress: number }>(
+      `/progress/lessons/${lessonId}/complete`,
+      { method: "POST" },
+    ),
 
   listTracks: () =>
     request<

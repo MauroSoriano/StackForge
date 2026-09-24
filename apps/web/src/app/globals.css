@@ -782,3 +782,29 @@ margin-top: 6px;
 margin: 6px 0;
 color: var(--text);
 }
+
+/* Dashboard de gestión: barra de progreso y filas de clase */
+.progress-bar {
+background: var(--bg-soft, #262633);
+border-radius: 999px;
+height: 10px;
+overflow: hidden;
+max-width: 640px;
+}
+
+.progress-fill {
+background: linear-gradient(90deg, var(--accent), var(--accent2));
+height: 100%;
+border-radius: 999px;
+transition: width 0.3s ease;
+min-width: 0;
+}
+
+.avatar-picker {
+background: var(--card, #1b1b27);
+}
+
+.lesson-row .btn {
+padding: 4px 10px;
+font-size: 12px;
+}

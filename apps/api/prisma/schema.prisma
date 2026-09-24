@@ -80,10 +80,12 @@ model User {
   passwordHash     String
   name             String?
   role             UserRole          @default(STUDENT)
+  avatarUrl        String?
   profile          Profile?
   portfolioProjects PortfolioProject[]
   submissions      Submission[]
   userProgress     UserProgress[]
+  lessonProgress   LessonProgress[]
   studySessions    StudySession[]
   userSkills       UserSkill[]
   userAchievements UserAchievement[]
@@ -151,11 +153,27 @@ model Lesson {
   order          Int
   durationMinutes Int?
   exercises      Exercise[]
+  lessonProgress LessonProgress[]
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt
 
   @@unique([moduleId, slug])
   @@index([moduleId, order])
+}
+
+model LessonProgress {
+  id          String      @id @default(cuid())
+  userId      String
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lessonId    String
+  lesson      Lesson      @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  startedAt   DateTime    @default(now())
+  completedAt DateTime?
+  updatedAt   DateTime    @updatedAt
+
+  @@unique([userId, lessonId])
+  @@index([userId])
+  @@index([lessonId])
 }
 
 model Exercise {

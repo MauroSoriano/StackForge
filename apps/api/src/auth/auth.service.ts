@@ -104,6 +104,14 @@ export class AuthService {
     return this.toSafeUser(user);
   }
 
+  async updateProfile(
+    userId: string,
+    data: { name?: string; avatarUrl?: string },
+  ): Promise<SafeUser> {
+    const user = await this.users.updateProfile(userId, data);
+    return this.toSafeUser(user);
+  }
+
   private async buildSession(user: User): Promise<AuthSession> {
     const accessToken = await this.jwt.signAsync(
       {
@@ -127,6 +135,7 @@ export class AuthService {
       email: user.email,
       name: user.name,
       role: user.role,
+      avatarUrl: user.avatarUrl,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };

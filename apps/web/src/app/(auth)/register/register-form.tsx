@@ -29,6 +29,7 @@ export function RegisterForm() {
         return;
       }
       setError(err instanceof ApiError ? err.message : "Error inesperado");
+    } finally {
       setLoading(false);
     }
   }

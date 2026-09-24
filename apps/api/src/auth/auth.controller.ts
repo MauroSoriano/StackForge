@@ -5,6 +5,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Patch,
   Post,
   Req,
   Res,
@@ -23,6 +24,7 @@ import { RegisterDto } from "./dto/register.dto.js";
 import { JwtAuthGuard } from "./guards/jwt-auth.guard.js";
 import type { AuthSession, SafeUser } from "./interfaces/auth-session.interface.js";
 import type { AuthUser } from "./interfaces/auth-user.interface.js";
+import { UpdateProfileDto } from "./dto/update-profile.dto.js";
 
 @ApiTags("auth")
 @Controller("auth")
@@ -92,6 +94,18 @@ export class AuthController {
   @ApiResponse({ status: 401, description: "No autenticado" })
   me(@CurrentUser() currentUser: AuthUser): Promise<SafeUser> {
     return this.auth.me(currentUser.id);
+  }
+
+  @Patch("profile")
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: "Actualizar nombre y foto de perfil" })
+  @ApiResponse({ status: 200, description: "Perfil actualizado" })
+  @ApiResponse({ status: 401, description: "No autenticado" })
+  updateProfile(
+    @CurrentUser() currentUser: AuthUser,
+    @Body() dto: UpdateProfileDto,
+  ): Promise<SafeUser> {
+    return this.auth.updateProfile(currentUser.id, dto);
   }
 
   private setCookies(res: Response, session: AuthSession): void {

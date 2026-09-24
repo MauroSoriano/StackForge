@@ -19,10 +19,11 @@ export function LoginForm() {
     setLoading(true);
     try {
       await api.login({ email, password });
-const next = searchParams.get("next");
-router.replace(next && next.startsWith("/") ? next : "/dashboard");
+      const next = searchParams.get("next");
+      router.replace(next && next.startsWith("/") ? next : "/dashboard");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Error inesperado");
+    } finally {
       setLoading(false);
     }
   }

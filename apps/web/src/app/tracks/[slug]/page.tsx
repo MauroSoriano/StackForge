@@ -63,6 +63,9 @@ export default function TrackPage({ params }: { params: Promise<{ slug: string }
   const [track, setTrack] = useState<TrackDetail | null>(null);
   const [openSection, setOpenSection] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [completed, setCompleted] = useState<Set<string>>(new Set());
+  const [loggedIn, setLoggedIn] = useState<boolean | null>(null);
+  const [marking, setMarking] = useState<string | null>(null);
 
   useEffect(() => {
     params
@@ -73,6 +76,43 @@ export default function TrackPage({ params }: { params: Promise<{ slug: string }
       })
       .catch((err) => setError(err instanceof Error ? err.message : "Error inesperado"));
   }, [params]);
+
+  useEffect(() => {
+    api
+      .getMyProgress()
+      .then((p) => {
+        setCompleted(new Set(p.lessonProgress.filter((l) => l.completedAt).map((l) => l.lessonId)));
+        setLoggedIn(true);
+      })
+      .catch(() => setLoggedIn(false));
+  }, []);
+
+  async function handleOpenSection(moduleId: string | null) {
+    setOpenSection(moduleId);
+    if (moduleId && loggedIn && track) {
+      try {
+        const mod = track.modules.find((m) => m.id === moduleId);
+        const firstLessonId = mod?.lessons[0]?.id;
+        if (firstLessonId) await api.startLesson(firstLessonId);
+      } catch {
+        // el progreso no debe romper la navegación
+      }
+    }
+  }
+
+  async function handleComplete(lessonId: string) {
+    if (!loggedIn) return;
+    setMarking(lessonId);
+    try {
+      await api.completeLesson(lessonId);
+      const p = await api.getMyProgress();
+      setCompleted(new Set(p.lessonProgress.filter((l) => l.completedAt).map((l) => l.lessonId)));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No se pudo guardar el progreso");
+    } finally {
+      setMarking(null);
+    }
+  }
 
   return (
     <main className="container" style={{ paddingTop: "6vh" }}>
@@ -114,7 +154,7 @@ export default function TrackPage({ params }: { params: Promise<{ slug: string }
                 <button
                   type="button"
                   className="sec-head"
-                  onClick={() => setOpenSection(isOpen ? null : mod.id)}
+                  onClick={() => handleOpenSection(isOpen ? null : mod.id)}
                   aria-expanded={isOpen}
                 >
                   <span className="tag">Sección {mod.order}</span>
@@ -129,19 +169,33 @@ export default function TrackPage({ params }: { params: Promise<{ slug: string }
                     {mod.description && <p className="sec-desc">{mod.description}</p>}
 
                     <h3 className="mod-title">Clases de la sección</h3>
-                    {mod.lessons.map((lesson) => (
-                      <article key={lesson.id} className="clase">
-                        <div className="clase-head">
-                          <h4>
-                            Clase {lesson.order}: {lesson.title}
-                          </h4>
-                          {lesson.durationMinutes != null && (
-                            <span className="state partial">~{lesson.durationMinutes} min</span>
-                          )}
-                        </div>
-                        <Markdown text={lesson.markdown} />
-                      </article>
-                    ))}
+                    {mod.lessons.map((lesson) => {
+                      const isDone = completed.has(lesson.id);
+                      return (
+                        <article key={lesson.id} className="clase">
+                          <div className="clase-head">
+                            <h4>
+                              {isDone && <span title="Completada">✔ </span>}
+                              Clase {lesson.order}: {lesson.title}
+                            </h4>
+                            {lesson.durationMinutes != null && (
+                              <span className="state partial">~{lesson.durationMinutes} min</span>
+                            )}
+                            {loggedIn && (
+                              <button
+                                type="button"
+                                className="btn"
+                                disabled={marking === lesson.id || isDone}
+                                onClick={() => handleComplete(lesson.id)}
+                              >
+                                {isDone ? "Completada" : marking === lesson.id ? "…" : "Marcar completada"}
+                              </button>
+                            )}
+                          </div>
+                          <Markdown text={lesson.markdown} />
+                        </article>
+                      );
+                    })}
 
                     <h3 className="mod-title">Actividad de la sección</h3>
                     {activities.length === 0 && <p>Esta sección aún no tiene actividad.</p>}
