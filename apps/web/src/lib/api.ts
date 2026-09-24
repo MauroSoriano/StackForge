@@ -1,10 +1,11 @@
 /**
  * Cliente HTTP hacia la API de StackForge.
- * En dev/prod el proxy de Next (rewrites en next.config.ts) expone la API bajo
- * /api del mismo origen, por lo que las cookies httpOnly se envían sin fricción
- * de CORS. Definir NEXT_PUBLIC_API_URL para apuntar a otro host.
+ * El API mountea bajo el prefijo global "api" (setGlobalPrefix en main.ts) y el
+ * proxy de Next reescribe /api/:path* -> :4000/api/:path*, por lo que el cliente
+ * debe pedir /api/... del mismo origen. Definir NEXT_PUBLIC_API_URL para apuntar
+ * a otro host (que incluya el prefijo, p. ej. https://api.x.com/api).
  */
-export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
+export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "/api";
 
 /** Nombre de la cookie httpOnly con el access token (coincide con la API). */
 export const ACCESS_TOKEN_COOKIE = "stackforge_at";
