@@ -105,7 +105,24 @@ export const api = {
         order: number;
         estimatedHours: number | null;
         lockedByDefault: boolean;
-        _count: { lessons: number };
+        lessons: Array<{
+          id: string;
+          slug: string;
+          title: string;
+          markdown: string;
+          order: number;
+          durationMinutes: number | null;
+          exercises: Array<{
+            id: string;
+            title: string;
+            description: string | null;
+            instructions: string;
+            order: number | null;
+            difficulty: "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
+            maxAttempts: number | null;
+            _count: { tests: number };
+          }>;
+        }>;
       }>;
     }>(`/curriculum/tracks/${slug}`),
 

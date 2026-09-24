@@ -37,6 +37,182 @@ const C = {
 
 const course = [
   {
+    slug: "git-y-github",
+    title: "Git y GitHub",
+    description:
+      "Domina Git como en el trabajo real: init, commits, branches, merges, conflictos, remotes y pull requests.",
+    type: C.JUNIOR,
+    order: 0,
+    modules: [
+      {
+        slug: "fundamentos-de-git",
+        title: "Fundamentos de Git",
+        description: "Qué es Git, el repositorio y tus primeros commits.",
+        order: 1,
+        estimatedHours: 4,
+        lessons: [
+          {
+            slug: "que-es-git",
+            title: "¿Qué es Git y por qué importa?",
+            markdown:
+              "# ¿Qué es Git?\n\nGit es un sistema de **control de versiones distribuido**. Guarda el historial completo de tus cambios y permite trabajar en paralelo sin pisarte.\n\n- Guarda un historial de todo lo que cambia.\n- Trabaja **offline**: todo vive en tu máquina.\n- Cualquiera clona el repo y tiene copia completa.\n\n## Repositorio\n\nUn **repositorio** (repo) es la carpeta donde Git guarda el historial, en la subcarpeta oculta `.git`.\n\n```bash\ngit init\n```\n\nEste comando convierte la carpeta actual en un repo.",
+            order: 1,
+            durationMinutes: 40,
+            exercises: [
+              {
+                title: "Inicializa tu primer repositorio",
+                description: "Convierte una carpeta en un repo Git.",
+                instructions:
+                  "Crea una carpeta, iniciala con git init y verifica que se creó la carpeta oculta .git. Luego ejecuta git status.",
+                difficulty: C.BEGINNER,
+                maxAttempts: 3,
+                requirements: [
+                  "Ejecuta git init.",
+                  "Ejecuta git status y muestra la salida.",
+                ],
+                tests: ["Verificar git init", "Verificar git status"],
+              },
+            ],
+          },
+          {
+            slug: "primeros-commits",
+            title: "Tu primer commit",
+            markdown:
+              "# Primeros commits\n\nEl flujo básico de Git tiene tres zonas: **working directory**, **staging area** y **repo local**.\n\n```bash\n# 1. Marcá qué archivos entran al commit\ngit add archivo.txt\n\n# 2. Creá el commit con un mensaje\ngit commit -m \"agrega archivo.txt\"\n```\n\nUn buen mensaje de commit describe **qué** y **por qué**, en presente: `add task model`, `fix auth redirect`.",
+            order: 2,
+            durationMinutes: 45,
+            exercises: [
+              {
+                title: "Ciclo add y commit",
+                description: "Guarda el primer cambio en el historial.",
+                instructions:
+                  "Crea un archivo, agrégalo al staging con git add y haz el primer commit con git commit -m.",
+                difficulty: C.BEGINNER,
+                maxAttempts: 3,
+                requirements: [
+                  "Usa git add.",
+                  "Crea el primer commit con un mensaje claro.",
+                ],
+                tests: ["Verificar git add", "Verificar git commit"],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        slug: "branches-y-merge",
+        title: "Branches y merge",
+        description: "Ramas, fusión y resolución de conflictos.",
+        order: 2,
+        estimatedHours: 5,
+        lessons: [
+          {
+            slug: "trabajar-con-ramas",
+            title: "Trabajar con ramas",
+            markdown:
+              "# Ramas (branches)\n\nUna **rama** es un puntero a un commit. Crear ramas permite experimentar sin romper `main`.\n\n```bash\ngit checkout -b feature/login\n# hacés cambios...\ngit add .\ngit commit -m \"add login form\"\n```\n\n```bash\ngit branch        # listar ramas\ngit checkout main # volver a main\n```",
+            order: 1,
+            durationMinutes: 45,
+            exercises: [
+              {
+                title: "Rama feature desde main",
+                description: "Creá una rama, trabajá y volvé.",
+                instructions:
+                  "Desde main, crea la rama feature/login, haz un commit en ella y vuelve a main sin perder nada.",
+                difficulty: C.INTERMEDIATE,
+                maxAttempts: 2,
+                requirements: [
+                  "Crea la rama feature/login.",
+                  "Haz al menos un commit en la rama.",
+                  "Vuelve a main con git checkout main.",
+                ],
+                tests: ["Verificar rama creada", "Verificar commit", "Volver a main"],
+              },
+            ],
+          },
+          {
+            slug: "merge-y-conflictos",
+            title: "Merge y conflictos",
+            markdown:
+              "# Merge y conflictos\n\nFusionás una rama con `git merge`. Cuando ambas ramas tocaron el mismo archivo, Git no puede decidir solo: aparece un **conflicto**.\n\n```bash\ngit checkout main\ngit merge feature/login\n```\n\nSi hay conflicto, Git marca los bloques:\n\n```\n<<<<<<< HEAD\nversión de main\n=======\nversión de la rama\n>>>>>>> feature/login\n```\n\nElegís qué queda, borrás las marcas, `git add` y `git commit`.",
+            order: 2,
+            durationMinutes: 50,
+            exercises: [
+              {
+                title: "Fusioná feature en main",
+                description: "Resolver un merge exitoso.",
+                instructions:
+                  "Fusiona la rama feature/login en main y deja el historial en main con los cambios de la feature.",
+                difficulty: C.INTERMEDIATE,
+                maxAttempts: 2,
+                requirements: [
+                  "Ejecuta git merge.",
+                  "La rama feature/login ya está integrada en main.",
+                ],
+                tests: ["Verificar merge realizado", "Verificar main actualizado"],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        slug: "github-remotes",
+        title: "GitHub y remotes",
+        description: "Remotes, push, pull y pull requests.",
+        order: 3,
+        estimatedHours: 4,
+        lessons: [
+          {
+            slug: "remotes-push-pull",
+            title: "Remotes, push y pull",
+            markdown:
+              "# Remotes en GitHub\n\nUn **remote** es la URL del repo remoto en GitHub.\n\n```bash\ngit remote add origin https://github.com/tu-usuario/mi-proyecto.git\ngit push -u origin main\n```\n\n- `git push` sube tus commits.\n- `git pull` trae los cambios del remoto.\n\nVerificá que el repo quedó público y sincronizado desde GitHub.",
+            order: 1,
+            durationMinutes: 45,
+            exercises: [
+              {
+                title: "Subí tu proyecto a GitHub",
+                description: "Conectá el repo local con GitHub.",
+                instructions:
+                  "Crea un repo vacío en GitHub, agrega el remote origin y sube main con git push -u origin main.",
+                difficulty: C.INTERMEDIATE,
+                maxAttempts: 3,
+                requirements: [
+                  "Agrega el remote origin.",
+                  "Sube la rama main con push.",
+                ],
+                tests: ["Verificar remote origin", "Verificar push"],
+              },
+            ],
+          },
+          {
+            slug: "pull-requests",
+            title: "Pull requests y flujo real",
+            markdown:
+              "# Pull requests\n\nEn el trabajo real no haces push directo a main: creás una rama, subís los cambios y abrís una **pull request** para que alguien la revise.\n\n```bash\ngit checkout -b fix/navbar\ngit push -u origin fix/navbar\n```\n\nEn GitHub abrís la PR, la revisan, y al fusionar se ordena el historial con merge o squash.",
+            order: 2,
+            durationMinutes: 40,
+            exercises: [
+              {
+                title: "Ciclo completo con pull request",
+                description: "Rama + push + PR como en el trabajo.",
+                instructions:
+                  "Crea una rama, haz un cambio, súbela a GitHub y abre una pull request describiendo qué hiciste.",
+                difficulty: C.INTERMEDIATE,
+                maxAttempts: 2,
+                requirements: [
+                  "Crea una rama y la sube.",
+                  "Abre una pull request describiendo el cambio.",
+                ],
+                tests: ["Verificar rama remota", "Verificar PR abierta"],
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  {
     slug: "fundamentos-fullstack",
     title: "Fundamentos Fullstack",
     description:
@@ -323,6 +499,7 @@ const course = [
 ];
 
 async function upsertCourse() {
+  await prisma.exercise.deleteMany({});
   for (const [ti, track] of course.entries()) {
     const t = await prisma.track.upsert({
       where: { slug: track.slug },

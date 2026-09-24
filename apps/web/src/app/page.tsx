@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 const phases = [
   {
     weeks: "SEM 01–02",
@@ -78,15 +80,14 @@ export default function Home() {
             Stack<span>Forge</span>
           </a>
           <div className="navlinks">
+            <a href="/cursos">Cursos</a>
             <a href="#ruta">Ruta</a>
-            <a href="#proyectos">Proyectos</a>
             <a href="#ia">IA</a>
             <a href="#github">GitHub</a>
             <a href="#faq">FAQ</a>
-            <a href="/login">Entrar</a>
           </div>
-          <a className="navbtn" href="#start">
-            Empezar
+          <a className="navbtn" href="/login">
+            Ingresar
           </a>
         </nav>
       </div>
@@ -109,9 +110,9 @@ export default function Home() {
             <a className="btn primary" href="#ruta">
               Ver la ruta →
             </a>
-            <a className="btn secondary" href="#github">
+            <Link className="btn secondary" href="/tracks/git-y-github">
               Aprender Git y GitHub
-            </a>
+            </Link>
           </div>
           <p className="hero-note">
             12 semanas para construir fundamentos sólidos de nivel junior ·
@@ -183,6 +184,11 @@ export default function Home() {
               </div>
             ))}
           </div>
+          <div className="actions" style={{ marginTop: 26 }}>
+            <a className="btn primary" href="/cursos">
+              Ver los cursos fullstack →
+            </a>
+          </div>
         </div>
       </section>
 
@@ -221,7 +227,7 @@ export default function Home() {
                 recomendaciones. Vuelves a subir y el historial muestra tus
                 intentos: conversion real de progreso.
               </p>
-              <a className="btn primary" href="#start">
+              <a className="btn primary" href="/cursos">
                 Comenzar a construir →
               </a>
             </div>
@@ -241,9 +247,9 @@ export default function Home() {
                 merge, conflictos, remotes y push. Nada de subidas automáticas:
                 tú creas tus repositorios y commits, como en el trabajo real.
               </p>
-              <a className="btn primary" href="#start">
+              <Link className="btn primary" href="/tracks/git-y-github">
                 Quiero dominar Git →
-              </a>
+              </Link>
             </div>
             <div className="terminal">
               <div className="terminalbar">stackforge / create-your-first-repo</div>
@@ -296,7 +302,7 @@ export default function Home() {
             Una experiencia centrada en escribir código, resolver problemas y
             demostrar lo que sabes construyendo.
           </p>
-          <a className="btn primary" href="#ruta">
+          <a className="btn primary" href="/cursos">
             Explorar la ruta →
           </a>
         </div>

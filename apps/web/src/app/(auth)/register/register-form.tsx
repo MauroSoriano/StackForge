@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { api, ApiError } from "../../../lib/api";
 
 export function RegisterForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -19,9 +20,14 @@ export function RegisterForm() {
     setLoading(true);
     try {
       await api.register({ email, password, name: name || undefined });
-      await api.login({ email, password });
-      router.replace("/dashboard");
+      const next = searchParams.get("next");
+      router.replace(next && next.startsWith("/") ? next : "/dashboard");
     } catch (err) {
+      if (err instanceof ApiError && err.status === 409) {
+        const next = searchParams.get("next");
+        router.replace(`/login?next=${encodeURIComponent(next && next.startsWith("/") ? next : "/dashboard")}`);
+        return;
+      }
       setError(err instanceof ApiError ? err.message : "Error inesperado");
       setLoading(false);
     }

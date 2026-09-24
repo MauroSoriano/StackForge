@@ -703,3 +703,82 @@ color: var(--muted);
 font-size: 14px;
 margin-top: 8px;
 }
+
+/* Vista de curso por secciones */
+.sec-head {
+display: flex;
+align-items: center;
+gap: 12px;
+width: 100%;
+padding: 18px 20px;
+border: none;
+background: transparent;
+cursor: pointer;
+text-align: left;
+font-family: inherit;
+}
+
+.sec-title {
+flex: 1;
+font-size: 18px;
+font-weight: 700;
+color: var(--text);
+}
+
+.sec-cheat {
+font-size: 12px;
+color: var(--muted);
+white-space: nowrap;
+}
+
+.sec-body {
+padding: 4px 20px 20px;
+border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.sec-desc {
+color: var(--muted);
+margin: 14px 0;
+}
+
+.clase {
+border: 1px solid rgba(255, 255, 255, 0.08);
+border-radius: 10px;
+padding: 14px 18px;
+margin-bottom: 14px;
+}
+
+.clase-head {
+display: flex;
+align-items: center;
+gap: 12px;
+justify-content: space-between;
+}
+
+.clase-head h4 {
+margin: 0;
+color: var(--text);
+}
+
+.clase .markdown {
+margin: 12px 0 0;
+}
+
+.clase .markdown h3 {
+font-size: 18px;
+margin: 14px 0 6px;
+}
+
+.clase .markdown h4 {
+font-size: 15px;
+margin: 12px 0 6px;
+}
+
+.actividad {
+margin-top: 6px;
+}
+
+.actividad h4 {
+margin: 6px 0;
+color: var(--text);
+}
