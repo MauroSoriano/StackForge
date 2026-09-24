@@ -106,8 +106,16 @@ export class AuthService {
 
   async updateProfile(
     userId: string,
-    data: { name?: string; avatarUrl?: string },
+    data: { name?: string; avatarUrl?: string; email?: string; phone?: string; country?: string },
   ): Promise<SafeUser> {
+    if (data.email !== undefined) {
+      const normalized = data.email.trim().toLowerCase();
+      const existing = await this.users.findByEmail(normalized);
+      if (existing && existing.id !== userId) {
+        throw new ConflictException("Ese email ya está registrado");
+      }
+      data = { ...data, email: normalized };
+    }
     const user = await this.users.updateProfile(userId, data);
     return this.toSafeUser(user);
   }
@@ -136,6 +144,8 @@ export class AuthService {
       name: user.name,
       role: user.role,
       avatarUrl: user.avatarUrl,
+      phone: user.phone,
+      country: user.country,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { api } from "../../lib/api";
+import { GlobalNav } from "../../components/global-nav";
 
 interface TrackItem {
   id: string;
@@ -33,15 +34,7 @@ export default function CursosPage() {
 
   return (
     <main className="container" style={{ paddingTop: "6vh" }}>
-      <nav>
-        <Link className="logo" href="/">
-          Stack<span>Forge</span>
-        </Link>
-        <div className="navlinks">
-          <Link href="/dashboard">Dashboard</Link>
-          <Link href="/login">Ingresar</Link>
-        </div>
-      </nav>
+      <GlobalNav />
 
       <section className="hero">
         <div className="badge">

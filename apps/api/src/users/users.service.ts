@@ -33,13 +33,16 @@ export class UsersService {
 
   updateProfile(
     id: string,
-    data: { name?: string; avatarUrl?: string },
+    data: { name?: string; avatarUrl?: string; email?: string; phone?: string; country?: string },
   ) {
     return this.prisma.user.update({
       where: { id },
       data: {
         ...(data.name !== undefined ? { name: data.name } : {}),
         ...(data.avatarUrl !== undefined ? { avatarUrl: data.avatarUrl } : {}),
+        ...(data.email !== undefined ? { email: data.email } : {}),
+        ...(data.phone !== undefined ? { phone: data.phone } : {}),
+        ...(data.country !== undefined ? { country: data.country } : {}),
       },
     });
   }

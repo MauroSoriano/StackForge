@@ -1,9 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { api } from "../../../lib/api";
 import { Markdown } from "../../../components/markdown";
+import { GlobalNav } from "../../../components/global-nav";
 
 interface ExerciseItem {
   id: string;
@@ -116,15 +116,7 @@ export default function TrackPage({ params }: { params: Promise<{ slug: string }
 
   return (
     <main className="container" style={{ paddingTop: "6vh" }}>
-      <nav>
-        <Link className="logo" href="/">
-          Stack<span>Forge</span>
-        </Link>
-        <div className="navlinks">
-          <Link href="/cursos">Cursos</Link>
-          <Link href="/login">Ingresar</Link>
-        </div>
-      </nav>
+      <GlobalNav links={[{ href: "/cursos", label: "Cursos" }]} />
 
       {error && (
         <p className="auth-error" role="alert">

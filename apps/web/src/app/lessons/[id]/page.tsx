@@ -1,9 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { api } from "../../../lib/api";
+import { GlobalNav } from "../../../components/global-nav";
 
 interface ExerciseItem {
   id: string;
@@ -100,14 +100,7 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
 
   return (
     <main className="container lesson" style={{ paddingTop: "6vh" }}>
-      <nav>
-        <Link className="logo" href="/">
-          Stack<span>Forge</span>
-        </Link>
-        <Link className="navbtn" href="/dashboard">
-          ↔ Dashboard
-        </Link>
-      </nav>
+      <GlobalNav />
 
       {error && (
         <p className="auth-error" role="alert">

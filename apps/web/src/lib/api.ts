@@ -10,7 +10,7 @@ export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "/api";
 /** Nombre de la cookie httpOnly con el access token (coincide con la API). */
 export const ACCESS_TOKEN_COOKIE = "stackforge_at";
 
-/** Tiempo m��ximo de espera de una petici��n (evita el bot��n cargando eterno). */
+/** Tiempo máximo de espera de una petición (evita el botón cargando eterno). */
 const REQUEST_TIMEOUT_MS = 15000;
 
 export interface SafeUser {
@@ -19,6 +19,8 @@ export interface SafeUser {
   name: string | null;
   role: "STUDENT" | "ADMIN";
   avatarUrl: string | null;
+  phone: string | null;
+  country: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -91,7 +93,7 @@ export const api = {
 
   me: () => request<SafeUser>("/auth/me"),
 
-  updateProfile: (data: { name?: string; avatarUrl?: string }) =>
+  updateProfile: (data: { name?: string; email?: string; avatarUrl?: string; phone?: string; country?: string }) =>
     request<SafeUser>("/auth/profile", { method: "PATCH", body: data }),
 
   getMyProgress: () =>

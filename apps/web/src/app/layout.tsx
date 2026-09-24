@@ -13,7 +13,24 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es">
+    <html lang="es" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function () {
+                try {
+                  var stored = localStorage.getItem("sf-theme");
+                  var dark = stored
+                    ? stored === "dark"
+                    : !window.matchMedia("(prefers-color-scheme: light)").matches;
+                  if (!dark) document.documentElement.dataset.theme = "light";
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
+      </head>
       <body>{children}</body>
     </html>
   );

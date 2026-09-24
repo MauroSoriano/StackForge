@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { api, type SafeUser } from "../../lib/api";
+import { GlobalNav } from "../../components/global-nav";
 
 type ModuleState = "LOCKED" | "AVAILABLE" | "IN_PROGRESS" | "COMPLETED";
 
@@ -117,7 +118,7 @@ function resizeToAvatar(file: File, maxPx = 192): Promise<string> {
     reader.onerror = () => reject(new Error("No se pudo leer la imagen"));
     reader.onload = () => {
       const img = new Image();
-      img.onerror = () => reject(new Error("Archivo no es una imagen v��lida"));
+      img.onerror = () => reject(new Error("Archivo no es una imagen válida"));
       img.onload = () => {
         const ratio = Math.min(1, maxPx / Math.max(img.width, img.height));
         const canvas = document.createElement("canvas");
@@ -139,7 +140,6 @@ export default function DashboardPage() {
   const [user, setUser] = useState<SafeUser | null>(null);
   const [progress, setProgress] = useState<ProgressPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [loggingOut, setLoggingOut] = useState(false);
   const [savingAvatar, setSavingAvatar] = useState(false);
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
@@ -162,15 +162,6 @@ export default function DashboardPage() {
         }
       });
   }, [router]);
-
-  async function handleLogout() {
-    setLoggingOut(true);
-    try {
-      await api.logout();
-    } finally {
-      router.replace("/");
-    }
-  }
 
   async function applyAvatar(urlOrFile: string | File) {
     setSavingAvatar(true);
@@ -233,17 +224,7 @@ export default function DashboardPage() {
 
   return (
     <main className="container" style={{ paddingTop: "6vh" }}>
-      <nav>
-        <Link className="logo" href="/">
-          Stack<span>Forge</span>
-        </Link>
-        <div className="navlinks">
-          <Link href="/cursos">Ver cursos</Link>
-          <button className="navbtn" type="button" onClick={handleLogout} disabled={loggingOut}>
-            {loggingOut ? "Saliendo…" : "Salir"}
-          </button>
-        </div>
-      </nav>
+      <GlobalNav links={[{ href: "/cursos", label: "Ver cursos" }]} />
 
       <section className="hero">
         <div className="badge">

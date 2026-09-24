@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { GlobalNav } from "../components/global-nav";
 
 const phases = [
   {
@@ -75,21 +76,15 @@ export default function Home() {
     <main>
       <div className="container">
         {/* Nav */}
-        <nav>
-          <a className="logo" href="#start">
-            Stack<span>Forge</span>
-          </a>
-          <div className="navlinks">
-            <a href="/cursos">Cursos</a>
-            <a href="#ruta">Ruta</a>
-            <a href="#ia">IA</a>
-            <a href="#github">GitHub</a>
-            <a href="#faq">FAQ</a>
-          </div>
-          <a className="navbtn" href="/login">
-            Ingresar
-          </a>
-        </nav>
+        <GlobalNav
+          links={[
+            { href: "/cursos", label: "Cursos" },
+            { href: "#ruta", label: "Ruta" },
+            { href: "#ia", label: "IA" },
+            { href: "#github", label: "GitHub" },
+            { href: "#faq", label: "FAQ" },
+          ]}
+        />
       </div>
 
       {/* Hero */}
