@@ -1,10 +1,17 @@
 # StackForge - Fase 08 - Mentor IA (feedback automático, OpenRouter GRATIS)
 
 ## Estado
-**PLANEADA → IMPLEMENTÁNDOSE (confirmada la gratuidad).** El usuario eligió
-**OpenRouter con SOLO modelos gratuitos** (`openrouter/free` router o modelos
-`:free`); costo **$0 permanente**, verificado gratis contra la doc oficial de
-OpenRouter (ago-2026). No se implementó ningún modelo "barato" ni de pago.
+**PENDIENTE — pausado por decisión del usuario (el calificador de actividades
+IA no se entrega; la app actual entrega las demás funcionalidades, fases 0-7).**
+
+Lo que ya quedó COMO PLAN/IMPLEMENTACIÓN PRELIMINAR (a retomar después):
+- Elección del usuario: **OpenRouter con SOLO modelos gratuitos**
+  (`openrouter/free` router o modelos `:free`); costo **$0 permanente**,
+  verificado gratis contra la doc oficial de OpenRouter (ago-2026).
+- Código del mentor (módulo `mentor`, endpoints review/history) escrito y con
+  prueba E2E real contra OpenRouter: la llamada $0 se ejecuta y persiste el
+  `AIFeedback` en BD; pendiente de validar calidad del feedback y decisión
+  final de entrega. **No se implementó ningún modelo "barato" ni de pago.**
 
 ## Restricción GLOBAL (decidida, no negociable)
 - **Solo modelos GRATUITOS.** Prohibido modelos "baratos"/"de bajo costo"/con

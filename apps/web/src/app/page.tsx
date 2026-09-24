@@ -186,15 +186,19 @@ export default function Home() {
         </div>
       </section>
 
-      {/* AI project review */}
+      {/* Project review */}
       <section id="ia">
         <div className="container">
           <div className="section-head">
             <div className="eyebrow">Evaluación automática</div>
             <h2>Tu código es revisado como un PR real.</h2>
             <p>
-              Checks deterministas más revisión de IA contra criterios explícitos:
+              Checks deterministas contra criterios explícitos:
               lo que está bien, lo que falla y por qué, con pistas para corregirlo.
+            </p>
+            <p style={{ color: "var(--muted)", marginTop: 10 }}>
+              <em>Calificador IA: próximamente.</em> La revisión con IA queda
+              pendiente de habilitación.
             </p>
           </div>
           <div className="split">

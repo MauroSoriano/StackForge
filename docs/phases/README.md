@@ -11,11 +11,11 @@ ARCHIVOS MODIFICADOS, CÓMO PROBARLO, QUÉ TESTS EXISTEN, QUÉ FALTA, QUÉ SIGUE
 | 3     | Database             | ✅        | PHASE-03-database.md      |
 | 4     | Learning Engine      | ✅        | PHASE-04-learning-engine.md |
 | 5     | Exercises            | ✅        | PHASE-05-exercises.md     |
-| 6     | Project Submission   | ⬜        | —                          |
-| 7     | AI Evaluation        | ⬜        | —                          |
+| 6     | Project Submission   | ✅        | PHASE-06-submissions.md   |
+| 7     | AI Evaluation        | ⏳ Pendiente | PHASE-08-ai-mentor.md      |
 | 8     | Git/GitHub Learning  | ⬜        | —                          |
 | 9     | Portfolio            | ⬜        | —                          |
-| 10    | AI Mentor (solo gratis) | ⏳ Plan | PHASE-08-ai-mentor.md       |
+| 10    | AI Mentor (solo gratis) | ⏳ Pendiente (pausado) | PHASE-08-ai-mentor.md |
 | 11    | Admin                | ⬜        | —                          |
 | 12    | Testing              | 🟡 Base   | —                          |
 | 13    | Security             | ⬜        | —                          |
