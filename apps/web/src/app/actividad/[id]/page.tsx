@@ -90,6 +90,7 @@ export default function ActivityPage({ params }: { params: Promise<{ id: string 
   const [uploadOk, setUploadOk] = useState<string | null>(null);
   const [selected, setSelected] = useState<File | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
 
   useEffect(() => {
     params
@@ -124,6 +125,54 @@ export default function ActivityPage({ params }: { params: Promise<{ id: string 
     setSelected(file);
   }
 
+  async function handleReplaceFile(submissionId: string, event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0] ?? null;
+    event.target.value = "";
+    if (!file) return;
+
+    setBusyId(submissionId);
+    setError(null);
+    setUploadOk(null);
+    try {
+      const result = await api.replaceExerciseSubmission(submissionId, file);
+      setSubmissions((prev) =>
+        prev.map((s) =>
+          s.id === submissionId
+            ? {
+                ...s,
+                status: result.status as ExerciseSubmission["status"],
+                archiveSizeBytes: result.archiveSizeBytes,
+                fileCount: result.fileCount,
+                submittedAt: result.submittedAt,
+                files: [{ path: file.name, sizeBytes: file.size }],
+              }
+            : s,
+        ),
+      );
+      setUploadOk("Entrega reemplazada correctamente.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No se pudo reemplazar el archivo.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function handleDelete(submissionId: string) {
+    if (!window.confirm("¿Eliminar esta entrega? Esta acción no se puede deshacer.")) return;
+    setBusyId(submissionId);
+    setError(null);
+    setUploadOk(null);
+    try {
+      await api.deleteExerciseSubmission(submissionId);
+      setSubmissions((prev) => prev.filter((s) => s.id !== submissionId));
+      setUploadOk("Entrega eliminada.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No se pudo eliminar la entrega.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   async function handleUpload() {
     if (!selected || !exercise) return;
     setUploading(true);
@@ -143,7 +192,7 @@ export default function ActivityPage({ params }: { params: Promise<{ id: string 
         },
         ...prev,
       ]);
-      setUploadOk(`Actividad entregada (intento ${result.attemptNumber}).`);
+      setUploadOk(`Actividad entregada (intento ${result.attemptNumber}). La revisión automática estará disponible próximamente.`);
       setSelected(null);
       if (fileRef.current) fileRef.current.value = "";
     } catch (err) {
@@ -165,7 +214,7 @@ export default function ActivityPage({ params }: { params: Promise<{ id: string 
 
       {uploadOk && (
         <p className="state pass submit-ok" role="status">
-          ✓ {uploadOk} La revisión automática estará disponible próximamente.
+          ✓ {uploadOk}
         </p>
       )}
 
@@ -268,6 +317,26 @@ export default function ActivityPage({ params }: { params: Promise<{ id: string 
                     </li>
                   ))}
                 </ul>
+                <div className="submission-actions">
+                  <label className={`btn secondary small${busyId !== null ? " is-disabled" : ""}`}>
+                    Reemplazar archivo
+                    <input
+                      type="file"
+                      accept=".pdf,.doc,.docx,.txt,.md,.zip,.rar,.7z,.tar,.gz,.tgz"
+                      onChange={(e) => handleReplaceFile(s.id, e)}
+                      disabled={busyId !== null}
+                      style={{ display: "none" }}
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    className="btn danger small"
+                    onClick={() => handleDelete(s.id)}
+                    disabled={busyId !== null}
+                  >
+                    {busyId === s.id ? "Procesando…" : "Eliminar"}
+                  </button>
+                </div>
               </div>
             ))}
           </section>

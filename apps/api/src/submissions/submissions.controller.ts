@@ -2,9 +2,11 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Post,
+  Put,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -65,6 +67,29 @@ export class SubmissionsController {
     @Param("exerciseId") exerciseId: string,
   ) {
     return this.submissions.getMyExerciseSubmissions(user.id, exerciseId);
+  }
+
+  @Put(":id/file")
+  @UseInterceptors(
+    FileInterceptor("file", {
+      storage: memoryStorage(),
+      limits: { fileSize: 32 * 1024 * 1024 },
+    }),
+  )
+  replaceForExercise(
+    @CurrentUser() user: AuthUser,
+    @Param("id") id: string,
+    @UploadedFile() file: UploadedActivityFile | undefined,
+  ) {
+    if (!file) {
+      throw new BadRequestException("Envía el archivo en el campo \"file\".");
+    }
+    return this.submissions.replaceExerciseSubmission(user.id, id, file);
+  }
+
+  @Delete(":id")
+  removeForExercise(@CurrentUser() user: AuthUser, @Param("id") id: string) {
+    return this.submissions.deleteExerciseSubmission(user.id, id);
   }
 
   @Post()

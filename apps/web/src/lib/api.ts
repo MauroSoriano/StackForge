@@ -80,7 +80,7 @@ export interface ExerciseSubmission {
   files: Array<{ path: string; sizeBytes: number | null }>;
 }
 
-async function requestUpload<T>(path: string, file: File): Promise<T> {
+async function requestUpload<T>(path: string, file: File, method: "POST" | "PUT" = "POST"): Promise<T> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 30000);
   let res: Response;
@@ -88,7 +88,7 @@ async function requestUpload<T>(path: string, file: File): Promise<T> {
     const body = new FormData();
     body.append("file", file);
     res = await fetch(`${API_URL}${path}`, {
-      method: "POST",
+      method,
       credentials: "include",
       cache: "no-store",
       body,
@@ -337,4 +337,17 @@ export const api = {
       fileCount: number | null;
       submittedAt: string;
     }>(`/submissions/exercises/${exerciseId}`, file),
+
+  replaceExerciseSubmission: (submissionId: string, file: File) =>
+    requestUpload<{
+      id: string;
+      attemptNumber: number;
+      status: string;
+      archiveSizeBytes: number | null;
+      fileCount: number | null;
+      submittedAt: string;
+    }>(`/submissions/${submissionId}/file`, file, "PUT"),
+
+  deleteExerciseSubmission: (submissionId: string) =>
+    request<void>(`/submissions/${submissionId}`, { method: "DELETE" }),
 };

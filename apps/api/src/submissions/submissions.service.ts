@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
@@ -106,12 +107,8 @@ export class SubmissionsService {
     return dir;
   }
 
-  /**
-   * Guarda la entrega de una actividad (ejercicio): sube el archivo a disco y
-   * registra la Submission junto a su SubmissionFile. La revisión por IA llega
-   * en una fase posterior; por ahora queda en estado RECEIVED.
-   */
-  async uploadForExercise(userId: string, exerciseId: string, file: UploadedActivityFile) {
+  /** Valida el archivo de una actividad (tamaño y extensión). */
+  private assertValidActivityFile(file: UploadedActivityFile) {
     if (!file || !file.buffer || file.size === 0) {
       throw new BadRequestException("No se recibió ningún archivo para entregar.");
     }
@@ -120,13 +117,46 @@ export class SubmissionsService {
         `El archivo supera el tamaño máximo de ${MAX_EXERCISE_FILE_BYTES / (1024 * 1024)} MB.`,
       );
     }
-
     const extension = path.extname(file.originalname).toLowerCase();
     if (!ALLOWED_EXERCISE_EXTENSIONS.has(extension)) {
       throw new BadRequestException(
         `Extensión "${extension || "(sin extensión)"}" no permitida. Usa un documento (PDF, DOC, DOCX, TXT, MD) o un comprimido (ZIP, RAR, 7Z, TAR, GZ).`,
       );
     }
+  }
+
+  /** Escribe el archivo de una entrega en disco y devuelve ruta y hash. */
+  private async storeActivityFile(
+    submissionId: string,
+    file: UploadedActivityFile,
+  ): Promise<{ stored: string; sha256: string }> {
+    const sha256 = createHash("sha256").update(file.buffer).digest("hex");
+    const safeName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const stored = path.join(
+      await this.exerciseUploadDir(),
+      `${submissionId}-${safeName}`,
+    );
+    await fs.promises.writeFile(stored, file.buffer);
+    return { stored, sha256 };
+  }
+
+  /** Borra del disco el archivo de una entrega (ignora si ya no existe). */
+  private async removeStoredFile(archiveKey: string | null) {
+    if (!archiveKey) return;
+    try {
+      await fs.promises.unlink(archiveKey);
+    } catch {
+      // El archivo ya no existe: no es un error.
+    }
+  }
+
+  /**
+   * Guarda la entrega de una actividad (ejercicio): sube el archivo a disco y
+   * registra la Submission junto a su SubmissionFile. La revisión por IA llega
+   * en una fase posterior; por ahora queda en estado RECEIVED.
+   */
+  async uploadForExercise(userId: string, exerciseId: string, file: UploadedActivityFile) {
+    this.assertValidActivityFile(file);
 
     const exercise = await this.prisma.exercise.findUnique({
       where: { id: exerciseId },
@@ -171,16 +201,83 @@ export class SubmissionsService {
       },
     });
 
-    const safeName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, "_");
-    const stored = path.join(await this.exerciseUploadDir(), `${submission.id}-${safeName}`);
-    await fs.promises.writeFile(stored, file.buffer);
-
+    const { stored } = await this.storeActivityFile(submission.id, file);
     await this.prisma.submission.update({
       where: { id: submission.id },
       data: { archiveKey: stored },
     });
 
     return submission;
+  }
+
+  /** Reemplaza el archivo de una entrega propia (mantiene el intento). */
+  async replaceExerciseSubmission(
+    userId: string,
+    submissionId: string,
+    file: UploadedActivityFile,
+  ) {
+    this.assertValidActivityFile(file);
+
+    const submission = await this.prisma.submission.findUnique({
+      where: { id: submissionId },
+      select: { id: true, userId: true, exerciseId: true, archiveKey: true },
+    });
+    if (!submission || !submission.exerciseId) {
+      throw new NotFoundException(`No existe la entrega de actividad "${submissionId}"`);
+    }
+    if (submission.userId !== userId) {
+      throw new ForbiddenException("Esta entrega no te pertenece.");
+    }
+
+    await this.removeStoredFile(submission.archiveKey);
+    const { stored, sha256 } = await this.storeActivityFile(submission.id, file);
+
+    return this.prisma.$transaction(async (tx) => {
+      await tx.submissionFile.deleteMany({ where: { submissionId: submission.id } });
+      await tx.submissionFile.create({
+        data: {
+          submissionId: submission.id,
+          path: file.originalname,
+          sizeBytes: file.size,
+          sha256,
+        },
+      });
+      return tx.submission.update({
+        where: { id: submission.id },
+        data: {
+          archiveKey: stored,
+          archiveSizeBytes: file.size,
+          fileCount: 1,
+          status: SubmissionStatus.RECEIVED,
+          submittedAt: new Date(),
+        },
+        select: {
+          id: true,
+          attemptNumber: true,
+          status: true,
+          archiveSizeBytes: true,
+          fileCount: true,
+          submittedAt: true,
+        },
+      });
+    });
+  }
+
+  /** Elimina una entrega propia y su archivo. */
+  async deleteExerciseSubmission(userId: string, submissionId: string) {
+    const submission = await this.prisma.submission.findUnique({
+      where: { id: submissionId },
+      select: { id: true, userId: true, exerciseId: true, archiveKey: true },
+    });
+    if (!submission || !submission.exerciseId) {
+      throw new NotFoundException(`No existe la entrega de actividad "${submissionId}"`);
+    }
+    if (submission.userId !== userId) {
+      throw new ForbiddenException("Esta entrega no te pertenece.");
+    }
+
+    await this.removeStoredFile(submission.archiveKey);
+    await this.prisma.submission.delete({ where: { id: submission.id } });
   }
 
   /** Entregas de una actividad hechas por el usuario (sin la revisión IA). */

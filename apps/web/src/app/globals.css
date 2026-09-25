@@ -1418,6 +1418,44 @@ background: var(--card, #1b1b27);
   font-size: 13px;
 }
 
+.submission-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+.btn.small {
+  padding: 8px 14px;
+  font-size: 13px;
+  border-radius: 9px;
+}
+
+.btn.danger {
+  background: transparent;
+  color: #ff6b6b;
+  border-color: rgba(255, 107, 107, 0.5);
+}
+
+.btn.danger:hover {
+  background: rgba(255, 107, 107, 0.12);
+}
+
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  filter: none;
+}
+
+label.btn {
+  cursor: pointer;
+}
+
+label.btn.is-disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .activity-back {
   margin: 30px 0 0;
   font-size: 14px;
