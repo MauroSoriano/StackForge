@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { api } from "../../../lib/api";
 import { Markdown } from "../../../components/markdown";
@@ -197,12 +198,21 @@ export default function TrackPage({ params }: { params: Promise<{ slug: string }
                         <h4>{ex.title}</h4>
                         {ex.description && <p>{ex.description}</p>}
                         <p className="md-instructions">{ex.instructions}</p>
-                        <p>
-                          <span className="state pass">{ex._count.tests} tests</span>
-                          {ex.maxAttempts != null && (
-                            <span className="state partial"> hasta {ex.maxAttempts} intentos</span>
+                        <div className="exercise-actions">
+                          <span className="activity-tags">
+                            <span className="state pass">
+                              {ex._count.tests} {ex._count.tests === 1 ? "test" : "tests"}
+                            </span>
+                            {ex.maxAttempts != null && (
+                              <span className="state partial">hasta {ex.maxAttempts} intentos</span>
+                            )}
+                          </span>
+                          {loggedIn && (
+                            <Link className="btn primary small" href={`/actividad/${ex.id}`}>
+                              Ver la actividad
+                            </Link>
                           )}
-                        </p>
+                        </div>
                       </article>
                     ))}
                   </div>

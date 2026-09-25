@@ -1470,6 +1470,13 @@ label.btn.is-disabled {
   margin-top: 16px;
 }
 
+.activity-tags {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .lesson .card .btn {
   padding: 10px 18px;
 }
