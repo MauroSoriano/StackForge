@@ -144,6 +144,7 @@ export default function DashboardPage() {
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [togglingLesson, setTogglingLesson] = useState<string | null>(null);
+  const [openTrack, setOpenTrack] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -220,6 +221,10 @@ export default function DashboardPage() {
       0,
     );
     return { total, done, pct: total === 0 ? 0 : Math.round((done / total) * 100) };
+  }
+
+  function toggleTrack(trackId: string) {
+    setOpenTrack((current) => (current === trackId ? null : trackId));
   }
 
   return (
@@ -308,10 +313,27 @@ export default function DashboardPage() {
 
       {progress?.tracks.map((track) => {
         const stats = trackStats(track);
+        const isOpen = openTrack === track.id;
         return (
           <section className="timeline" key={track.id}>
-            <div className="track-head">
-              <span className="tag">{(TYPE_LABEL[track.type] ?? track.type).toUpperCase()}</span>
+            <div
+              className="track-head track-toggle"
+              role="button"
+              tabIndex={0}
+              aria-expanded={isOpen}
+              aria-label={`${isOpen ? "Ocultar" : "Mostrar"} clases de ${track.title}`}
+              onClick={() => toggleTrack(track.id)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  toggleTrack(track.id);
+                }
+              }}
+            >
+              <div className="track-toggle-top">
+                <span className="tag">{(TYPE_LABEL[track.type] ?? track.type).toUpperCase()}</span>
+                <span className="track-chevron">{isOpen ? "▲ Ocultar clases" : "▼ Ver clases"}</span>
+              </div>
               <h2>{track.title}</h2>
               {track.description && <p>{track.description}</p>}
               <div className="progress-bar">
@@ -322,7 +344,9 @@ export default function DashboardPage() {
               </p>
             </div>
 
-            {track.modules.map((mod) => {
+            {isOpen && (
+              <div className="track-body">
+                {track.modules.map((mod) => {
               const s = sectionStats(track, mod.id);
               return (
                 <div key={mod.id} className="card" style={{ padding: 14, marginBottom: 12 }}>
@@ -362,9 +386,11 @@ export default function DashboardPage() {
               );
             })}
 
-            <p style={{ margin: "6px 0 18px" }}>
-              <Link href={`/tracks/${track.slug}`}>Continuar curso →</Link>
-            </p>
+                <p style={{ margin: "6px 0 18px" }}>
+                  <Link href={`/tracks/${track.slug}`}>Continuar curso →</Link>
+                </p>
+              </div>
+            )}
           </section>
         );
       })}
