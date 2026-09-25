@@ -96,10 +96,18 @@ export function GlobalNav({ links = [], children }: GlobalNavProps) {
 
   async function handleLogout() {
     setLoggingOut(true);
+    setOpen(false);
     try {
       await api.logout();
+    } catch {
+      // Aunque falle la petición, forzamos la salida local igualmente.
     } finally {
+      // Limpiamos el estado del nav al instante (evita el "Saliendo…" congelado
+      // cuando ya estamos en la ruta destino) y refrescamos la sesión/caché.
+      setUser(null);
+      setLoggingOut(false);
       router.replace("/");
+      router.refresh();
     }
   }
 
