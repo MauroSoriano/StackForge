@@ -42,6 +42,77 @@ interface RequestOptions {
   body?: Body;
 }
 
+export interface ExerciseDetail {
+  id: string;
+  title: string;
+  description: string | null;
+  instructions: string;
+  order: number | null;
+  difficulty: "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
+  maxAttempts: number | null;
+  lesson: {
+    id: string;
+    slug: string;
+    title: string;
+    module: {
+      id: string;
+      slug: string;
+      title: string;
+      track: { slug: string; title: string };
+    };
+  } | null;
+  requirements: Array<{
+    id: string;
+    description: string;
+    isMandatory: boolean;
+    order: number | null;
+  }>;
+  tests: Array<{ id: string; name: string; description: string | null; order: number | null }>;
+}
+
+export interface ExerciseSubmission {
+  id: string;
+  attemptNumber: number;
+  status: "RECEIVED" | "PROCESSING" | "PASSED" | "PARTIAL" | "NEEDS_WORK" | "ERROR";
+  archiveSizeBytes: number | null;
+  fileCount: number | null;
+  submittedAt: string;
+  files: Array<{ path: string; sizeBytes: number | null }>;
+}
+
+async function requestUpload<T>(path: string, file: File): Promise<T> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 30000);
+  let res: Response;
+  try {
+    const body = new FormData();
+    body.append("file", file);
+    res = await fetch(`${API_URL}${path}`, {
+      method: "POST",
+      credentials: "include",
+      cache: "no-store",
+      body,
+      signal: controller.signal,
+    });
+  } catch {
+    throw new ApiError(0, "No se pudo conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.");
+  } finally {
+    clearTimeout(timer);
+  }
+
+  const json = (await res.json().catch(() => null)) as
+    | { message?: string | string[] }
+    | null;
+
+  if (!res.ok) {
+    const message = Array.isArray(json?.message)
+      ? json.message.join(". ")
+      : json?.message ?? `Error ${res.status}`;
+    throw new ApiError(res.status, message);
+  }
+  return json as T;
+}
+
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
@@ -250,4 +321,20 @@ export const api = {
         }>;
       }>;
     }>("/curriculum/syllabus"),
+
+  getExercise: (id: string) => request<ExerciseDetail>(`/exercises/${id}`),
+
+  getExerciseSubmissions: (exerciseId: string) =>
+    request<ExerciseSubmission[]>(`/submissions/exercises/${exerciseId}`),
+
+  uploadExerciseFile: (exerciseId: string, file: File) =>
+    requestUpload<{
+      id: string;
+      exerciseId: string;
+      attemptNumber: number;
+      status: string;
+      archiveSizeBytes: number | null;
+      fileCount: number | null;
+      submittedAt: string;
+    }>(`/submissions/exercises/${exerciseId}`, file),
 };

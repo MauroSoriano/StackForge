@@ -190,6 +190,7 @@ model Exercise {
   maxAttempts          Int?
   requirements         ExerciseRequirement[]
   tests                ExerciseTest[]
+  submissions          Submission[]
   createdAt            DateTime               @default(now())
   updatedAt            DateTime               @updatedAt
 
@@ -256,8 +257,10 @@ model ProjectRequirement {
 
 model Submission {
   id               String           @id @default(cuid())
-  projectId        String
-  project          Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId        String?
+  project          Project?         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  exerciseId       String?
+  exercise         Exercise?        @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
   userId           String
   user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   attemptNumber    Int
@@ -272,7 +275,9 @@ model Submission {
   feedbacks        AIFeedback[]
 
   @@unique([projectId, userId, attemptNumber])
+  @@unique([exerciseId, userId, attemptNumber])
   @@index([userId])
+  @@index([exerciseId])
   @@index([projectId])
 }
 

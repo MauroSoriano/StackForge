@@ -1,4 +1,11 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
+import { createHash } from "node:crypto";
+import fs from "node:fs";
+import path from "node:path";
 
 import { Inject } from "@nestjs/common";
 import { SANDBOX_RUNNER } from "./sandbox/sandbox-runner.interface.js";
@@ -15,6 +22,31 @@ import { SubmissionStatus } from "../generated/prisma/client.js";
 const EVAL_TIMEOUT_MS = 30_000;
 const EVAL_COMMAND = "node --test";
 
+/** Extensiones admitidas para la entrega de actividades (documentos y comprimidos). */
+const ALLOWED_EXERCISE_EXTENSIONS = new Set([
+  ".pdf",
+  ".doc",
+  ".docx",
+  ".txt",
+  ".md",
+  ".zip",
+  ".rar",
+  ".7z",
+  ".tar",
+  ".gz",
+  ".tgz",
+]);
+
+/** Tamaño máximo de un archivo de actividad. */
+const MAX_EXERCISE_FILE_BYTES = 25 * 1024 * 1024;
+
+export interface UploadedActivityFile {
+  originalname: string;
+  mimetype: string;
+  size: number;
+  buffer: Buffer;
+}
+
 @Injectable()
 export class SubmissionsService {
   constructor(
@@ -28,6 +60,7 @@ export class SubmissionsService {
       select: {
         id: true,
         projectId: true,
+        exerciseId: true,
         attemptNumber: true,
         status: true,
         result: true,
@@ -60,6 +93,110 @@ export class SubmissionsService {
         status: true,
         submittedAt: true,
       },
+    });
+  }
+
+  /** Directorio donde se guardan los archivos entregados de actividades. */
+  private async exerciseUploadDir(): Promise<string> {
+    const root = process.env.UPLOAD_DIR
+      ? path.resolve(process.env.UPLOAD_DIR)
+      : path.join(process.cwd(), "uploads");
+    const dir = path.join(root, "activities");
+    await fs.promises.mkdir(dir, { recursive: true });
+    return dir;
+  }
+
+  /**
+   * Guarda la entrega de una actividad (ejercicio): sube el archivo a disco y
+   * registra la Submission junto a su SubmissionFile. La revisión por IA llega
+   * en una fase posterior; por ahora queda en estado RECEIVED.
+   */
+  async uploadForExercise(userId: string, exerciseId: string, file: UploadedActivityFile) {
+    if (!file || !file.buffer || file.size === 0) {
+      throw new BadRequestException("No se recibió ningún archivo para entregar.");
+    }
+    if (file.size > MAX_EXERCISE_FILE_BYTES) {
+      throw new BadRequestException(
+        `El archivo supera el tamaño máximo de ${MAX_EXERCISE_FILE_BYTES / (1024 * 1024)} MB.`,
+      );
+    }
+
+    const extension = path.extname(file.originalname).toLowerCase();
+    if (!ALLOWED_EXERCISE_EXTENSIONS.has(extension)) {
+      throw new BadRequestException(
+        `Extensión "${extension || "(sin extensión)"}" no permitida. Usa un documento (PDF, DOC, DOCX, TXT, MD) o un comprimido (ZIP, RAR, 7Z, TAR, GZ).`,
+      );
+    }
+
+    const exercise = await this.prisma.exercise.findUnique({
+      where: { id: exerciseId },
+      select: { id: true },
+    });
+    if (!exercise) {
+      throw new NotFoundException(`No existe la actividad "${exerciseId}"`);
+    }
+
+    const attemptNumber =
+      (await this.prisma.submission.count({ where: { userId, exerciseId } })) +
+      1;
+
+    const sha256 = createHash("sha256").update(file.buffer).digest("hex");
+    const submission = await this.prisma.submission.create({
+      data: {
+        userId,
+        exerciseId,
+        attemptNumber,
+        status: SubmissionStatus.RECEIVED,
+        archiveSizeBytes: file.size,
+        fileCount: 1,
+        files: {
+          create: [
+            {
+              path: file.originalname,
+              sizeBytes: file.size,
+              sha256,
+            },
+          ],
+        },
+        submittedAt: new Date(),
+      },
+      select: {
+        id: true,
+        exerciseId: true,
+        attemptNumber: true,
+        status: true,
+        archiveSizeBytes: true,
+        fileCount: true,
+        submittedAt: true,
+      },
+    });
+
+    const safeName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const stored = path.join(await this.exerciseUploadDir(), `${submission.id}-${safeName}`);
+    await fs.promises.writeFile(stored, file.buffer);
+
+    await this.prisma.submission.update({
+      where: { id: submission.id },
+      data: { archiveKey: stored },
+    });
+
+    return submission;
+  }
+
+  /** Entregas de una actividad hechas por el usuario (sin la revisión IA). */
+  getMyExerciseSubmissions(userId: string, exerciseId: string) {
+    return this.prisma.submission.findMany({
+      where: { userId, exerciseId },
+      select: {
+        id: true,
+        attemptNumber: true,
+        status: true,
+        archiveSizeBytes: true,
+        fileCount: true,
+        submittedAt: true,
+        files: { select: { path: true, sizeBytes: true } },
+      },
+      orderBy: { submittedAt: "desc" },
     });
   }
 

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { api } from "../../../lib/api";
@@ -131,7 +132,12 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
                 <h3>{ex.title}</h3>
                 {ex.description && <p>{ex.description}</p>}
                 <p className="md-instructions">{ex.instructions}</p>
-                <span className="state pass">{ex._count.tests} tests</span>
+                <div className="exercise-actions">
+                  <span className="state pass">{ex._count.tests} {ex._count.tests === 1 ? "test" : "tests"}</span>
+                  <Link className="btn primary" href={`/actividad/${ex.id}`}>
+                    Ver la actividad
+                  </Link>
+                </div>
               </div>
             ))}
           </section>

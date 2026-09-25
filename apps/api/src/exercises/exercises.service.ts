@@ -39,6 +39,21 @@ export class ExercisesService {
         order: true,
         difficulty: true,
         maxAttempts: true,
+        lesson: {
+          select: {
+            id: true,
+            slug: true,
+            title: true,
+            module: {
+              select: {
+                id: true,
+                slug: true,
+                title: true,
+                track: { select: { slug: true, title: true } },
+              },
+            },
+          },
+        },
         requirements: { orderBy: [{ order: "asc" }, { id: "asc" }] },
         tests: { orderBy: [{ order: "asc" }, { id: "asc" }] },
       },

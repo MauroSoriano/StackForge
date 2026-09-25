@@ -173,7 +173,7 @@ export class ProgressService {
 
   /** Marca una clase como empezada (sin forzar orden de secciones). */
   async startLesson(userId: string, lessonId: string) {
-    const lesson = await this.assertLesson(lessonId);
+    await this.assertLesson(lessonId);
     return this.prisma.lessonProgress.upsert({
       where: { userId_lessonId: { userId, lessonId } },
       update: { completedAt: null },
