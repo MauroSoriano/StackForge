@@ -1,3 +1,11 @@
+/**
+ * ARCHIVO: mentor.service.ts
+ * --------------------------
+ * Orquesta el MENTOR: reúne el contexto de un envío (resultado real de la
+ * Fase 06, código, proyecto y requisitos), se lo pasa a un MentorProvider
+ * gratuito ($0) y persiste el feedback en AIFeedback. No ejecuta Docker.
+ */
+
 // MentorService — Fase 08
 //
 // Orquesta el mentor: lee lo que la Fase 06 YA guardo (result real:
@@ -20,10 +28,15 @@ import type {
   SubmissionStatus,
 } from "../generated/prisma/client.js";
 
+/**
+ * Servicio del mentor: construye el contexto, pide la revisión y la guarda.
+ */
 @Injectable()
 export class MentorService {
   constructor(
+    // Cliente Prisma para leer el envío y escribir el AIFeedback.
     private readonly prisma: PrismaService,
+    // Proveedor de IA inyectado por el token MENTOR_PROVIDER.
     @Inject(MENTOR_PROVIDER) private readonly provider: MentorProvider,
   ) {}
 
@@ -33,14 +46,18 @@ export class MentorService {
     userId: string,
     mode: MentorMode = "REVIEW",
   ): Promise<MentorFeedback> {
+    // 1) Arma el contexto desde lo ya guardado (valida propiedad).
     const context = await this.buildContext(submissionId, userId);
+    // 2) Pide la revisión al proveedor (gratuito, sin tocar Docker).
     const feedback = await this.provider.review(context, mode);
+    // 3) Persiste el feedback y lo devuelve.
     await this.persist(submissionId, feedback);
     return feedback;
   }
 
   /** Historial de feedbacks del mentor para un envio propio. */
   async history(submissionId: string, userId: string): Promise<AIFeedback[]> {
+    // buildContext lanza 404 si el envío no existe o no es del usuario (valida propiedad).
     await this.buildContext(submissionId, userId); // valida propiedad
     return this.prisma.aIFeedback.findMany({
       where: { submissionId },
@@ -53,6 +70,7 @@ export class MentorService {
     submissionId: string,
     userId: string,
   ): Promise<MentorContext> {
+    // Filtra por id + userId: si no pertenece al usuario, no se encuentra.
     const submission = await this.prisma.submission.findFirst({
       where: { id: submissionId, userId },
       include: {
@@ -77,14 +95,17 @@ export class MentorService {
     if (!submission) {
       throw new NotFoundException('No existe tu envio "' + submissionId + '"');
     }
+    // Normaliza los archivos al formato plano esperado por el proveedor.
     const files = (submission.files ?? []).map((f) => ({
       path: f.path,
       content: f.content,
     }));
+    // Normaliza los requisitos del proyecto (criterio opcional -> null).
     const requirements = (submission.project?.requirements ?? []).map((r) => ({
       description: r.description,
       acceptanceCriteria: r.acceptanceCriteria ?? null,
     }));
+    // El resultado de la Fase 06 se guarda como JSON; se castea y valida aparte.
     const result = (submission.result as {
       exitCode: number | null;
       timedOut: boolean;
@@ -113,6 +134,7 @@ export class MentorService {
     submissionId: string,
     feedback: MentorFeedback,
   ): Promise<void> {
+    // Crea el registro de feedback con defaults seguros (provider FREE, etc.).
     await this.prisma.aIFeedback.create({
       data: {
         submissionId,

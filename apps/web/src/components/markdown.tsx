@@ -1,7 +1,24 @@
+/*
+ * markdown.tsx
+ * -----------------------------------------------------------------------------
+ * Renderizador de Markdown muy ligero (sin librerías externas).
+ * Convierte texto con marcas sencillas a nodos de React:
+ *   `código`, **negrita**, *cursiva*, _cursiva_, # títulos, - listas y ``` bloques.
+ * Se usa para mostrar el contenido de las lecciones.
+ * -----------------------------------------------------------------------------
+ */
 type InlineNode = React.ReactNode;
 
+/**
+ * Renderiza el formato en línea de un texto (código, negrita y cursiva).
+ * Recorre el texto con una expresión regular y va intercalando texto plano
+ * con etiquetas <code>, <strong> y <em>.
+ *
+ * @param text Fragmento de una sola línea/trozo a formatear.
+ */
 function Inline({ text }: { text: string }) {
   const parts: InlineNode[] = [];
+  // Regex que captura: `code`, **bold**, *italic* y _italic_
   const re = /(`[^`]+`)|(\*\*[^*]+\*\*)|(\*[^*]+\*)|(_[^_]+_)/g;
   let last = 0;
   let m: RegExpExecArray | null;
@@ -16,15 +33,25 @@ function Inline({ text }: { text: string }) {
       parts.push(<em key={k++}>{full.slice(1, -1)}</em>);
     last = m.index + full.length;
   }
+  // Añade el resto del texto que queda tras el último match
   if (last < text.length) parts.push(text.slice(last));
   return <>{parts}</>;
 }
 
+/**
+ * Convierte un texto Markdown en bloque a elementos React.
+ * Soporta títulos (#, ##, ###), listas con - o *, líneas vacías y bloques ```.
+ *
+ * @param text Markdown completo (puede tener varias líneas).
+ */
 export function Markdown({ text }: { text: string }) {
   const lines = text.split("\n");
   const nodes: InlineNode[] = [];
+  // Buffer temporal para ir acumulando las líneas de un bloque de código.
   let codeBuf: string[] = [];
+  // Bandera: true mientras estamos dentro de un bloque ```...```.
   let inCode = false;
+  // Contador para generar `key` únicas en los nodos de React.
   let k = 0;
 
   const flushCode = (i: number) => {

@@ -1,3 +1,11 @@
+/**
+ * ARCHIVO: mentor-provider.interface.ts
+ * -------------------------------------
+ * Contrato y tipos del MENTOR: qué datos recibe y qué devuelve una revisión
+ * automática. El mentor trabaja sobre lo que ya se evaluó en la Fase 06
+ * (submission + files): NO vuelve a ejecutar Docker, solo analiza texto/JSON.
+ */
+
 import type { MentorMode, SubmissionStatus, AIProvider } from "../generated/prisma/client.js";
 
 /**
@@ -45,10 +53,18 @@ export interface MentorFeedback {
   latencyMs?: number | null;
 }
 
-/** Contrato del proveedor de IA del mentor (inyectado vía token). */
+/**
+ * Contrato que debe cumplir cualquier proveedor de IA del mentor.
+ * - name: identificador del proveedor (p. ej. "OPENROUTER").
+ * - review: analiza el contexto y el modo, y devuelve un MentorFeedback.
+ */
 export interface MentorProvider {
   readonly name: string;
   review(context: MentorContext, mode: MentorMode): Promise<MentorFeedback>;
 }
 
+/**
+ * Token de inyección de NestJS. El módulo del mentor lo asocia con la
+ * implementación concreta (OpenRouterMentorProvider).
+ */
 export const MENTOR_PROVIDER = Symbol("MENTOR_PROVIDER");

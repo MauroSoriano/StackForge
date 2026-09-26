@@ -1,11 +1,23 @@
 "use client";
 
+/*
+ * page.tsx (ruta "/lessons/[id]")
+ * -----------------------------------------------------------------------------
+ * Página de una lección individual: muestra su contenido en markdown y la lista
+ * de ejercicios asociados. Solo accesible con sesión (si la API responde 401 se
+ * redirige a /login). Es Client Component por el uso de estado y efectos.
+ *
+ * Nota: incluye una función Markdown local (versión simple) en lugar de usar la
+ * del componente compartido.
+ * -----------------------------------------------------------------------------
+ */
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { api } from "../../../lib/api";
 import { GlobalNav } from "../../../components/global-nav";
 
+// Forma de un ejercicio de la lección.
 interface ExerciseItem {
   id: string;
   title: string;
@@ -17,6 +29,7 @@ interface ExerciseItem {
   _count: { tests: number };
 }
 
+// Forma de una lección con su módulo/curso y sus ejercicios.
 interface LessonDetail {
   id: string;
   slug: string;
@@ -33,12 +46,14 @@ interface LessonDetail {
   exercises: ExerciseItem[];
 }
 
+// Etiquetas legibles para la dificultad.
 const DIFF_LABEL: Record<ExerciseItem["difficulty"], string> = {
   BEGINNER: "Principiante",
   INTERMEDIATE: "Intermedio",
   ADVANCED: "Avanzado",
 };
 
+/** Renderizador de markdown local y simplificado (títulos, listas y código). */
 function Markdown({ text }: { text: string }) {
   return (
     <div className="markdown">
@@ -80,11 +95,18 @@ function Markdown({ text }: { text: string }) {
   );
 }
 
+/**
+ * Página de la lección.
+ *
+ * @param params Promesa con el parámetro dinámico `id` de la URL.
+ */
 export default function LessonPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const [lesson, setLesson] = useState<LessonDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // Al montar: comprueba sesión (/auth/me) y luego carga la lección.
+  // Si no hay sesión (401), redirige a /login.
   useEffect(() => {
     api
       .me()
@@ -121,8 +143,10 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
             )}
           </section>
 
+          {/* Contenido de la lección renderizado desde markdown */}
           <Markdown text={lesson.markdown} />
 
+          {/* Lista de ejercicios de la lección */}
           <section>
             <h2>Ejercicios</h2>
             {lesson.exercises.length === 0 && <p>Esta lección aún no tiene ejercicios.</p>}

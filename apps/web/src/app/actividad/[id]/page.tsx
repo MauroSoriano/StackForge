@@ -1,5 +1,13 @@
 "use client";
 
+/*
+ * page.tsx (ruta "/actividad/[id]")
+ * -----------------------------------------------------------------------------
+ * Página de una actividad (ejercicio): muestra enunciado e instrucciones,
+ * requisitos, un formulario para subir archivos y el historial de entregas con
+ * opciones de reemplazar o eliminar. Requiere sesión.
+ * -----------------------------------------------------------------------------
+ */
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -10,12 +18,14 @@ import {
 } from "../../../lib/api";
 import { GlobalNav } from "../../../components/global-nav";
 
+// Etiquetas legibles de dificultad.
 const DIFF_LABEL: Record<ExerciseDetail["difficulty"], string> = {
   BEGINNER: "Principiante",
   INTERMEDIATE: "Intermedio",
   ADVANCED: "Avanzado",
 };
 
+// Etiquetas legibles del estado de una entrega.
 const STATUS_LABEL: Record<ExerciseSubmission["status"], string> = {
   RECEIVED: "Recibida",
   PROCESSING: "En revisión",
@@ -25,6 +35,7 @@ const STATUS_LABEL: Record<ExerciseSubmission["status"], string> = {
   ERROR: "Error",
 };
 
+// Clase CSS de color para cada estado (pass/partial/fail).
 const STATUS_CLASS: Record<ExerciseSubmission["status"], string> = {
   RECEIVED: "pass",
   PROCESSING: "partial",
@@ -34,6 +45,7 @@ const STATUS_CLASS: Record<ExerciseSubmission["status"], string> = {
   ERROR: "fail",
 };
 
+/** Convierte un tamaño en bytes a un texto legible (B, KB, MB, GB). */
 function formatBytes(bytes: number | null): string {
   if (bytes == null) return "";
   const units = ["B", "KB", "MB", "GB"];
@@ -46,6 +58,7 @@ function formatBytes(bytes: number | null): string {
   return `${value.toFixed(unit === 0 ? 0 : 1)} ${units[unit]}`;
 }
 
+/** Formatea una fecha ISO como texto local en español (es-AR). */
 function formatDate(value: string): string {
   const d = new Date(value);
   return d.toLocaleString("es-AR", {
@@ -57,6 +70,7 @@ function formatDate(value: string): string {
   });
 }
 
+/** Renderiza las instrucciones en un markdown muy básico (títulos, listas y código). */
 function Instructions({ text }: { text: string }) {
   return (
     <div className="markdown">
@@ -81,17 +95,28 @@ function Instructions({ text }: { text: string }) {
   );
 }
 
+/**
+ * Página de la actividad.
+ *
+ * @param params Promesa con el parámetro dinámico `id` de la URL.
+ */
 export default function ActivityPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
+  // Ejercicio cargado y su historial de entregas.
   const [exercise, setExercise] = useState<ExerciseDetail | null>(null);
   const [submissions, setSubmissions] = useState<ExerciseSubmission[]>([]);
   const [error, setError] = useState<string | null>(null);
+  // Estado de la subida del formulario principal.
   const [uploading, setUploading] = useState(false);
   const [uploadOk, setUploadOk] = useState<string | null>(null);
+  // Archivo elegido en el formulario (aún no subido).
   const [selected, setSelected] = useState<File | null>(null);
+  // Referencia al input de archivo principal (para limpiarlo tras subir).
   const fileRef = useRef<HTMLInputElement>(null);
+  // Id de la entrega con una operación en curso (reemplazar/eliminar).
   const [busyId, setBusyId] = useState<string | null>(null);
 
+  // Al montar: verifica sesión, luego carga el ejercicio y sus entregas en paralelo.
   useEffect(() => {
     params
       .then((p) =>
@@ -104,6 +129,7 @@ export default function ActivityPage({ params }: { params: Promise<{ id: string 
             throw err;
           })
           .then(async () => {
+            // Promise.all lanza ambas peticiones a la vez para ir más rápido.
             const [ex, subs] = await Promise.all([
               api.getExercise(p.id),
               api.getExerciseSubmissions(p.id),
@@ -113,18 +139,21 @@ export default function ActivityPage({ params }: { params: Promise<{ id: string 
           }),
       )
       .catch((err: unknown) => {
+        // Si fue 401 ya se redirigió; cualquier otro error se muestra.
         if (!(err instanceof Error && "status" in err && (err as { status: number }).status === 401)) {
           setError(err instanceof Error ? err.message : "Error inesperado");
         }
       });
   }, [params, router]);
 
+  /** Guarda el archivo elegido en el estado (sin subirlo todavía). */
   function onFileChange(event: React.ChangeEvent<HTMLInputElement>) {
     setUploadOk(null);
     const file = event.target.files?.[0] ?? null;
     setSelected(file);
   }
 
+  /** Reemplaza el archivo de una entrega existente y actualiza la lista local. */
   async function handleReplaceFile(submissionId: string, event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0] ?? null;
     event.target.value = "";
@@ -157,6 +186,7 @@ export default function ActivityPage({ params }: { params: Promise<{ id: string 
     }
   }
 
+  /** Elimina una entrega (pide confirmación) y la quita de la lista. */
   async function handleDelete(submissionId: string) {
     if (!window.confirm("¿Eliminar esta entrega? Esta acción no se puede deshacer.")) return;
     setBusyId(submissionId);
@@ -173,8 +203,9 @@ export default function ActivityPage({ params }: { params: Promise<{ id: string 
     }
   }
 
+  /** Sube el archivo seleccionado como una nueva entrega (nuevo intento). */
   async function handleUpload() {
-    if (!selected || !exercise) return;
+    if (!selected || !exercise) return; // nada que subir
     setUploading(true);
     setUploadOk(null);
     setError(null);
@@ -218,8 +249,10 @@ export default function ActivityPage({ params }: { params: Promise<{ id: string 
         </p>
       )}
 
+      {/* Todo el contenido se muestra cuando el ejercicio ya cargó */}
       {exercise && (
         <>
+          {/* Encabezado: contexto, título, dificultad y contadores */}
           <section className="hero">
             {exercise.lesson && (
               <div className="badge">
@@ -243,6 +276,7 @@ export default function ActivityPage({ params }: { params: Promise<{ id: string 
             {exercise.description && <p className="hero-note">{exercise.description}</p>}
           </section>
 
+          {/* Dos columnas: instrucciones y requisitos */}
           <div className="activity-layout">
             <section className="card">
               <h2>Lo que tenés que hacer</h2>
@@ -265,6 +299,7 @@ export default function ActivityPage({ params }: { params: Promise<{ id: string 
             )}
           </div>
 
+          {/* Formulario de entrega: elegir archivo y subirlo */}
           <section className="card submit-card">
             <h2>Entregar mi actividad</h2>
             <p className="card-sub">
@@ -299,6 +334,7 @@ export default function ActivityPage({ params }: { params: Promise<{ id: string 
             </button>
           </section>
 
+          {/* Historial de entregas: estado, archivos y acciones */}
           <section className="submissions">
             <h2>Tus entregas</h2>
             {submissions.length === 0 && <p>Esta actividad aún no tiene entregas tuyas.</p>}

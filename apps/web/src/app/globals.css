@@ -1,5 +1,6 @@
 @import "tailwindcss";
 
+/* ==== Variables de tema (paleta por defecto: oscuro) ==== */
 :root {
   --bg: #07090d;
   --panel: #0d1118;
@@ -16,6 +17,7 @@
   --max: 1160px;
 }
 
+/* ==== Variables de tema (paleta clara) ==== */
 [data-theme="light"] {
   --bg: #f6f7fb;
   --panel: #ffffff;
@@ -32,6 +34,7 @@
   --terminal: #0b0f16;
 }
 
+/* ==== Reset y estilos base ==== */
 * {
   box-sizing: border-box;
   margin: 0;
@@ -63,6 +66,7 @@ a {
   margin: auto;
 }
 
+/* ==== Barra de navegación ==== */
 nav {
   height: 76px;
   display: flex;
@@ -114,7 +118,7 @@ nav {
   border-color: var(--accent);
 }
 
-/* Avatar + menú desplegable */
+/* ==== Avatar y menú desplegable de usuario ==== */
 .user-menu {
   position: relative;
 }
@@ -201,7 +205,7 @@ nav {
   margin: 6px 4px;
 }
 
-/* Botón de tema */
+/* ==== Botón de cambio de tema ==== */
 .theme-toggle {
   border: 1px solid var(--line);
   background: transparent;
@@ -229,6 +233,7 @@ nav {
   display: inline flex;
 }
 
+/* ==== Hero y botones (portada) ==== */
 .hero {
   text-align: center;
   padding: 100px 0 85px;
@@ -319,6 +324,7 @@ h1 {
   margin-top: 15px !important;
 }
 
+/* ==== Secciones generales y encabezados ==== */
 section {
   padding: 82px 0;
 }
@@ -348,6 +354,7 @@ h2 {
   margin-top: 13px;
 }
 
+/* ==== Grillas y tarjetas ==== */
 .grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -383,6 +390,7 @@ h2 {
   font-size: 14px;
 }
 
+/* ==== Timeline / roadmap de semanas ==== */
 .timeline {
   display: grid;
   gap: 12px;
@@ -423,6 +431,7 @@ h2 {
   white-space: nowrap;
 }
 
+/* ==== Layout de dos columnas y checklist de revisión ==== */
 .split {
   display: grid;
   grid-template-columns: 1.25fr 0.75fr;
@@ -477,6 +486,7 @@ h2 {
   font-size: 13px;
 }
 
+/* ==== Bloque de GitHub y terminal ==== */
 .github {
   border: 1px solid #293448;
   border-radius: 20px;
@@ -535,6 +545,7 @@ pre {
   color: #67d8ff;
 }
 
+/* ==== FAQ, CTA y footer ==== */
 .faq {
   display: grid;
   gap: 10px;
@@ -596,6 +607,7 @@ footer {
   justify-content: space-between;
 }
 
+/* ==== Media query general (pantallas <= 800px) ==== */
 @media (max-width: 800px) {
   .navlinks {
     display: none;
@@ -633,9 +645,7 @@ footer {
   }
 }
 
-/* ---------------------------------------------------------------------------
-   Autenticación
-   --------------------------------------------------------------------------- */
+/* ==== Autenticación ==== */
 .auth-wrap {
   min-height: 100vh;
   display: grid;
@@ -731,7 +741,7 @@ footer {
   font-weight: 700;
 }
 
-/* Dashboard */
+/* ==== Dashboard ==== */
 .dash-hello {
   font-size: 13px;
   color: var(--muted);
@@ -751,7 +761,7 @@ padding: 3px 10px;
 margin-top: 12px;
 }
 
-/* Ruta de estudio */
+/* ==== Ruta de estudio ==== */
 .track-head {
 margin: 26px 0 14px;
 }
@@ -766,7 +776,7 @@ color: var(--muted);
 margin: 0 0 10px;
 }
 
-/* Curso como desplegable (dashboard) */
+/* ==== Curso como desplegable (dashboard) ==== */
 .track-head.track-toggle {
 cursor: pointer;
 padding: 16px;
@@ -830,7 +840,7 @@ font-weight: 600;
 color: var(--text);
 }
 
-/* Lección */
+/* ==== Lección y markdown ==== */
 .lesson {
 max-width: 860px;
 }
@@ -917,7 +927,7 @@ font-size: 14px;
 margin-top: 8px;
 }
 
-/* Vista de curso por secciones */
+/* ==== Vista de curso por secciones ==== */
 .sec-head {
 display: flex;
 align-items: center;
@@ -996,7 +1006,7 @@ margin: 6px 0;
 color: var(--text);
 }
 
-/* Dashboard de gestión: barra de progreso y filas de clase */
+/* ==== Dashboard de gestión: barra de progreso y filas de clase ==== */
 .progress-bar {
 background: var(--bg-soft, #262633);
 border-radius: 999px;
@@ -1022,9 +1032,7 @@ background: var(--card, #1b1b27);
   font-size: 12px;
 }
 
-/* ---------------------------------------------------------------------------
-   Páginas de ajustes y perfil
-   --------------------------------------------------------------------------- */
+/* ==== Páginas de ajustes y perfil ==== */
 .settings-wrap {
   max-width: 720px;
   margin: 0 auto;
@@ -1075,7 +1083,7 @@ background: var(--card, #1b1b27);
   margin-top: 2px;
 }
 
-/* Switch */
+/* ==== Switch de opciones ==== */
 .switch {
   position: relative;
   display: inline-block;
@@ -1119,7 +1127,7 @@ background: var(--card, #1b1b27);
   transform: translateX(20px);
 }
 
-/* Selecto (idioma) */
+/* ==== Selector de idioma ==== */
 .settings-select {
   background: var(--panel2);
   border: 1px solid var(--line);
@@ -1130,7 +1138,7 @@ background: var(--card, #1b1b27);
   font-family: inherit;
 }
 
-/* Avatar grande en perfil */
+/* ==== Avatar grande en perfil ==== */
 .profile-avatar-big {
   border-radius: 50%;
   object-fit: cover;
@@ -1140,7 +1148,7 @@ background: var(--card, #1b1b27);
   font-weight: 700;
 }
 
-/* Select de país */
+/* ==== Selector de país ==== */
 .country-select {
   width: 100%;
   background: var(--panel2);
@@ -1158,7 +1166,7 @@ background: var(--card, #1b1b27);
   border-color: var(--accent);
 }
 
-/* Responsive general */
+/* ==== Responsive general (pantallas <= 640px) ==== */
 @media (max-width: 640px) {
   .container {
     width: calc(100% - 28px);
@@ -1229,9 +1237,7 @@ background: var(--card, #1b1b27);
   }
 }
 
-/* ---------------------------------------------------------------- */
-/* Vista de actividad (entrega de ejercicios)                        */
-/* ---------------------------------------------------------------- */
+/* ==== Vista de actividad (entrega de ejercicios) ==== */
 
 .state {
   display: inline-block;
@@ -1524,6 +1530,7 @@ label.btn.is-disabled {
   font-weight: 700;
 }
 
+/* ==== Responsive de actividad (pantallas <= 720px) ==== */
 @media (max-width: 720px) {
   .activity-layout {
     grid-template-columns: 1fr;

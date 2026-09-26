@@ -1,13 +1,23 @@
 "use client";
 
+/*
+ * page.tsx (ruta "/dashboard")
+ * -----------------------------------------------------------------------------
+ * Panel del estudiante: saludo, gestión de foto de perfil y progreso por curso.
+ * Carga el usuario y su progreso, permite marcar/reiniciar clases y cambiar el
+ * avatar (con recorte/redimensionado en el navegador). Requiere sesión.
+ * -----------------------------------------------------------------------------
+ */
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { api, type SafeUser } from "../../lib/api";
 import { GlobalNav } from "../../components/global-nav";
 
+// Estados posibles de un módulo según el progreso.
 type ModuleState = "LOCKED" | "AVAILABLE" | "IN_PROGRESS" | "COMPLETED";
 
+// Curso con sus módulos y lecciones (sin datos de contenido, solo estructura).
 interface TrackProgress {
   id: string;
   slug: string;
@@ -23,6 +33,7 @@ interface TrackProgress {
   }>;
 }
 
+// Progreso de un módulo concreto.
 interface ModuleProgressItem {
   trackId: string;
   moduleId: string | null;
@@ -30,23 +41,27 @@ interface ModuleProgressItem {
   progress: number;
 }
 
+// Progreso de una lección concreta.
 interface LessonProgressItem {
   lessonId: string;
   completedAt: string | null;
 }
 
+// Estructura completa que devuelve /progress.
 interface ProgressPayload {
   tracks: TrackProgress[];
   progress: ModuleProgressItem[];
   lessonProgress: LessonProgressItem[];
 }
 
+// Etiquetas legibles para el tipo de curso.
 const TYPE_LABEL: Record<string, string> = {
   JUNIOR: "Junior",
   MID: "Mid",
   SENIOR: "Senior",
 };
 
+// Etiquetas legibles para el estado de un módulo.
 const STATE_LABEL: Record<ModuleState, string> = {
   LOCKED: "Bloqueada",
   AVAILABLE: "Disponible",
@@ -54,8 +69,10 @@ const STATE_LABEL: Record<ModuleState, string> = {
   COMPLETED: "Completada",
 };
 
+// Paleta de colores para avatares generados.
 const AVATAR_COLORS = ["#7c5cff", "#00c2a8", "#ff8a5c", "#ff5c8a", "#5ca8ff", "#8aff5c", "#ffd25c", "#c15cff"];
 
+/** Iniciales (1 o 2 letras) a partir del nombre o del email. */
 function initialsOf(name: string | null, email: string): string {
   const source = name?.trim() || email.trim();
   const parts = source.split(/\s+/).filter(Boolean);
@@ -64,6 +81,7 @@ function initialsOf(name: string | null, email: string): string {
   return (first + second).toUpperCase() || "?";
 }
 
+/** Hash simple de un string, usado para elegir color de avatar de forma estable. */
 function hashCode(text: string): number {
   let hash = 0;
   for (let i = 0; i < text.length; i++) {
@@ -73,6 +91,7 @@ function hashCode(text: string): number {
   return Math.abs(hash);
 }
 
+/** Genera una imagen SVG (data URL) con las iniciales y un color como avatar. */
 function avatarDataUrl(seed: string): string {
   const color = AVATAR_COLORS[hashCode(seed) % AVATAR_COLORS.length];
   const initials = initialsOf(null, seed);
@@ -80,6 +99,7 @@ function avatarDataUrl(seed: string): string {
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 }
 
+/** Muestra la foto del usuario o, si no tiene, un avatar generado con iniciales. */
 function Avatar({ user, size = 64 }: { user: SafeUser; size?: number }) {
   if (user.avatarUrl) {
     return (
@@ -112,6 +132,13 @@ function Avatar({ user, size = 64 }: { user: SafeUser; size?: number }) {
   );
 }
 
+/**
+ * Lee una imagen elegida por el usuario, la redimensiona en un <canvas> y la
+ * devuelve como data URL JPEG (para no subir archivos enormes).
+ *
+ * @param file Archivo de imagen seleccionado.
+ * @param maxPx Lado máximo en píxeles (por defecto 192).
+ */
 function resizeToAvatar(file: File, maxPx = 192): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -135,18 +162,26 @@ function resizeToAvatar(file: File, maxPx = 192): Promise<string> {
   });
 }
 
+/** Página del panel de estudiante. */
 export default function DashboardPage() {
   const router = useRouter();
+  // Usuario logueado y su progreso (null mientras cargan).
   const [user, setUser] = useState<SafeUser | null>(null);
   const [progress, setProgress] = useState<ProgressPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Estados de la foto de perfil: guardando, si se muestra el selector, feedback.
   const [savingAvatar, setSavingAvatar] = useState(false);
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
+  // Id de la lección que se está completando/reiniciando (para mostrar "…").
   const [togglingLesson, setTogglingLesson] = useState<string | null>(null);
+  // Id del curso abierto en el acordeón (null = ninguno).
   const [openTrack, setOpenTrack] = useState<string | null>(null);
+  // Referencia al input de archivo oculto de la foto de perfil.
   const fileRef = useRef<HTMLInputElement>(null);
 
+  // Al montar: carga el usuario y, si hay sesión, su progreso.
+  // Si la API responde 401 redirige a /login.
   useEffect(() => {
     api
       .me()
@@ -164,6 +199,10 @@ export default function DashboardPage() {
       });
   }, [router]);
 
+  /**
+   * Guarda la foto de perfil. Acepta una URL ya lista (avatar generado) o un
+   * archivo, en cuyo caso primero lo redimensiona.
+   */
   async function applyAvatar(urlOrFile: string | File) {
     setSavingAvatar(true);
     setFeedback(null);
@@ -180,6 +219,10 @@ export default function DashboardPage() {
     }
   }
 
+  /**
+   * Alterna el estado de una clase: si estaba completada la reinicia
+   * (startLesson); si no, la completa (completeLesson). Luego recarga el progreso.
+   */
   async function toggleLesson(lessonId: string, completed: boolean) {
     setTogglingLesson(lessonId);
     setFeedback(null);
@@ -199,12 +242,15 @@ export default function DashboardPage() {
     }
   }
 
+  /** Indica si una lección ya fue completada. */
   const lessonCompleted = (id: string) =>
     progress?.lessonProgress.some((lp) => lp.lessonId === id && lp.completedAt) ?? false;
 
+  /** Busca el progreso de un módulo concreto dentro de un curso. */
   const moduleOf = (trackId: string, moduleId: string) =>
     progress?.progress.find((p) => p.trackId === trackId && p.moduleId === moduleId);
 
+  /** Calcula total/completadas/porcentaje y estado de un módulo. */
   function sectionStats(track: TrackProgress, moduleId: string) {
     const mod = track.modules.find((m) => m.id === moduleId);
     const total = mod?.lessons.length ?? 0;
@@ -214,6 +260,7 @@ export default function DashboardPage() {
     return { total, done, pct: total === 0 ? 0 : Math.round((done / total) * 100), state };
   }
 
+  /** Calcula total/completadas/porcentaje de un curso entero. */
   function trackStats(track: TrackProgress) {
     const total = track.modules.reduce((acc, m) => acc + m.lessons.length, 0);
     const done = track.modules.reduce(
@@ -223,6 +270,7 @@ export default function DashboardPage() {
     return { total, done, pct: total === 0 ? 0 : Math.round((done / total) * 100) };
   }
 
+  /** Abre o cierra el acordeón de un curso. */
   function toggleTrack(trackId: string) {
     setOpenTrack((current) => (current === trackId ? null : trackId));
   }
@@ -231,11 +279,13 @@ export default function DashboardPage() {
     <main className="container" style={{ paddingTop: "6vh" }}>
       <GlobalNav links={[{ href: "/cursos", label: "Ver cursos" }]} />
 
+      {/* Encabezado con avatar (clickeable para cambiarlo) y saludo */}
       <section className="hero">
         <div className="badge">
           <span className="dot" /> Panel de estudiante
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap" }}>
+          {/* Al hacer clic en el avatar se muestra/oculta el selector de foto */}
           <button
             type="button"
             onClick={() => setShowAvatarPicker((v) => !v)}
@@ -269,6 +319,7 @@ export default function DashboardPage() {
         </p>
       )}
 
+      {/* Panel para elegir foto: avatar generado o subir una imagen */}
       {showAvatarPicker && user && (
         <section className="card avatar-picker" style={{ padding: 16, marginBottom: 20 }}>
           <h3 style={{ margin: "0 0 12px" }}>Elige tu foto de perfil</h3>
@@ -302,6 +353,7 @@ export default function DashboardPage() {
 
       <h2 style={{ margin: "28px 0 8px" }}>Mis cursos</h2>
 
+      {/* Estado de carga y caso sin cursos */}
       {progress === null && !error && <p>Cargando tus cursos…</p>}
 
       {progress?.tracks.length === 0 && (
@@ -311,9 +363,10 @@ export default function DashboardPage() {
         </p>
       )}
 
+      {/* Recorre cada curso del usuario y lo muestra como acordeón */}
       {progress?.tracks.map((track) => {
-        const stats = trackStats(track);
-        const isOpen = openTrack === track.id;
+        const stats = trackStats(track); // estadísticas generales del curso
+        const isOpen = openTrack === track.id; // ¿está abierto?
         return (
           <section className="timeline" key={track.id}>
             <div
@@ -346,6 +399,7 @@ export default function DashboardPage() {
 
             {isOpen && (
               <div className="track-body">
+                {/* Cada módulo/sección del curso con su progreso */}
                 {track.modules.map((mod) => {
               const s = sectionStats(track, mod.id);
               return (
@@ -361,6 +415,7 @@ export default function DashboardPage() {
                   <div className="progress-bar" style={{ height: 6, margin: "10px 0 12px", background: "var(--bg-soft, #262633)" }}>
                     <div className="progress-fill" style={{ width: `${s.pct}%` }} />
                   </div>
+                  {/* Cada clase: enlace a la lección y botón completar/reiniciar */}
                   {mod.lessons.map((lesson) => {
                     const complete = lessonCompleted(lesson.id);
                     return (

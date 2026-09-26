@@ -1,22 +1,35 @@
 "use client";
 
+/*
+ * page.tsx (ruta "/ajustes")
+ * -----------------------------------------------------------------------------
+ * Página de preferencias del usuario: apariencia (tema claro/oscuro), idioma y
+ * notificaciones. El tema y el idioma se guardan en localStorage; las
+ * notificaciones son por ahora solo estado local (funcionalidad futura).
+ * -----------------------------------------------------------------------------
+ */
 import { useEffect, useRef, useState } from "react";
 import { GlobalNav } from "../../components/global-nav";
 
+// Idiomas ofrecidos en el selector.
 const LANGUAGES = [
   { code: "es", label: "Español" },
   { code: "en", label: "English" },
   { code: "pt", label: "Português" },
 ];
 
+/** Página de ajustes. */
 export default function AjustesPage() {
+  // Referencias a los controles para inicializarlos según lo guardado.
   const darkSwitchRef = useRef<HTMLInputElement>(null);
   const langRef = useRef<HTMLSelectElement>(null);
+  // Estados locales de las notificaciones (aún no persistidos).
   const [nProgress, setNProgress] = useState(true);
   const [nResults, setNResults] = useState(true);
   const [nMentions, setNMentions] = useState(false);
   const [nEmails, setNEmails] = useState(true);
 
+  // Al montar, sincroniza los controles con el tema e idioma guardados.
   useEffect(() => {
     if (darkSwitchRef.current) {
       darkSwitchRef.current.checked = document.documentElement.dataset.theme !== "light";
@@ -26,16 +39,18 @@ export default function AjustesPage() {
     }
   }, []);
 
+  /** Aplica el tema en <html> y lo guarda en localStorage. */
   function applyTheme(next: "dark" | "light") {
     if (next === "light") {
       document.documentElement.dataset.theme = "light";
       localStorage.setItem("sf-theme", "light");
     } else {
-      delete document.documentElement.dataset.theme;
+      delete document.documentElement.dataset.theme; // oscuro = sin atributo
       localStorage.setItem("sf-theme", "dark");
     }
   }
 
+  /** Guarda el idioma elegido (el cambio de contenido llegará después). */
   function changeLanguage(code: string) {
     localStorage.setItem("sf-lang", code);
   }
@@ -53,6 +68,7 @@ export default function AjustesPage() {
           <p className="hero-note">Personaliza tu experiencia en StackForge.</p>
         </div>
 
+        {/* Tarjeta: tema claro/oscuro */}
         <div className="settings-card">
           <h2>Apariencia</h2>
           <p className="card-sub">El modo claro o oscuro se guarda en tu dispositivo.</p>
@@ -73,6 +89,7 @@ export default function AjustesPage() {
           </div>
         </div>
 
+        {/* Tarjeta: selección de idioma */}
         <div className="settings-card">
           <h2>Idioma</h2>
           <p className="card-sub">Selecciona el idioma de la plataforma.</p>
@@ -97,6 +114,7 @@ export default function AjustesPage() {
           </div>
         </div>
 
+        {/* Tarjeta: preferencias de notificaciones (aún sin persistir) */}
         <div className="settings-card">
           <h2>Notificaciones</h2>
           <p className="card-sub">Preferencias de notificación. Se habilitarán en breve.</p>

@@ -1,13 +1,23 @@
 "use client";
 
+/*
+ * page.tsx (ruta "/tu-perfil")
+ * -----------------------------------------------------------------------------
+ * Página de perfil del usuario: muestra y permite editar foto, nombre, email,
+ * teléfono y país. Carga los datos actuales con el API y los guarda al enviar.
+ * Requiere sesión (redirige a /login?next=/tu-perfil si no la hay).
+ * -----------------------------------------------------------------------------
+ */
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { api, type SafeUser } from "../../lib/api";
 import { GlobalNav } from "../../components/global-nav";
 
+// Paleta para el avatar generado con iniciales.
 const AVATAR_COLORS = ["#7c5cff", "#00c2a8", "#ff8a5c", "#ff5c8a", "#5ca8ff", "#8aff5c", "#ffd25c", "#c15cff"];
 
+// Lista de países para el selector del formulario.
 const COUNTRIES = [
   "Argentina", "Bolivia", "Brasil", "Chile", "Colombia", "Costa Rica", "Cuba",
   "Ecuador", "El Salvador", "España", "Estados Unidos", "Guatemala", "Honduras",
@@ -15,6 +25,7 @@ const COUNTRIES = [
   "Puerto Rico", "República Dominicana", "Uruguay", "Venezuela", "Otro",
 ];
 
+/** Iniciales (1 o 2 letras) a partir del nombre o del email. */
 function initialsOf(name: string | null, email: string): string {
   const source = name?.trim() || email.trim();
   const parts = source.split(/\s+/).filter(Boolean);
@@ -23,6 +34,7 @@ function initialsOf(name: string | null, email: string): string {
   return (first + second).toUpperCase() || "?";
 }
 
+/** Hash simple de un string, usado para elegir un color de avatar determinista. */
 function hashCode(text: string): number {
   let hash = 0;
   for (let i = 0; i < text.length; i++) {
@@ -32,6 +44,10 @@ function hashCode(text: string): number {
   return Math.abs(hash);
 }
 
+/**
+ * Redimensiona una imagen en el navegador con <canvas> y la devuelve como
+ * data URL JPEG, para subir un avatar liviano.
+ */
 function resizeToAvatar(file: File, maxPx = 192): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -55,19 +71,24 @@ function resizeToAvatar(file: File, maxPx = 192): Promise<string> {
   });
 }
 
+/** Página de perfil del usuario. */
 export default function PerfilPage() {
   const router = useRouter();
+  // Usuario cargado y valores controlados del formulario.
   const [user, setUser] = useState<SafeUser | null>(null);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [country, setCountry] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [feedback, setFeedback] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [savingPhoto, setSavingPhoto] = useState(false);
+  const [feedback, setFeedback] = useState<string | null>(null); // mensaje de éxito
+  const [saving, setSaving] = useState(false); // guardando datos del formulario
+  const [savingPhoto, setSavingPhoto] = useState(false); // subiendo la foto
+  // Referencia al input de archivo oculto para la foto.
   const fileRef = useRef<HTMLInputElement>(null);
 
+  // Al montar, carga el usuario y rellena los campos del formulario.
+  // Si no hay sesión (401), redirige al login conservando la ruta destino.
   useEffect(() => {
     api
       .me()
@@ -87,6 +108,7 @@ export default function PerfilPage() {
       });
   }, [router]);
 
+  /** Redimensiona y sube una nueva foto de perfil. */
   async function applyPhoto(file: File) {
     setSavingPhoto(true);
     setFeedback(null);
@@ -102,6 +124,7 @@ export default function PerfilPage() {
     }
   }
 
+  /** Guarda los cambios del formulario de información personal. */
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
@@ -127,6 +150,7 @@ export default function PerfilPage() {
     }
   }
 
+  // Mientras no cargó el usuario, se muestra un estado de carga/error.
   if (!user) {
     return (
       <main className="container" style={{ paddingTop: "6vh" }}>
@@ -165,6 +189,7 @@ export default function PerfilPage() {
           </p>
         )}
 
+        {/* Tarjeta: foto de perfil (imagen o avatar con iniciales) */}
         <div className="settings-card">
           <h2>Foto de perfil</h2>
           <p className="card-sub">Se muestra junto a tu nombre en la plataforma.</p>
@@ -215,6 +240,7 @@ export default function PerfilPage() {
           </div>
         </div>
 
+        {/* Tarjeta: formulario de datos personales */}
         <div className="settings-card">
           <h2>Información personal</h2>
           <p className="card-sub">Tu nombre, correo, teléfono y país.</p>

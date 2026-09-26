@@ -1,11 +1,21 @@
 "use client";
 
+/*
+ * page.tsx (ruta "/tracks/[slug]")
+ * -----------------------------------------------------------------------------
+ * Detalle de un curso: muestra sus secciones (módulos) en acordeón, las clases
+ * (con su markdown) y las actividades de cada sección. Si hay sesión, permite
+ * marcar clases como completadas y registra el inicio de módulo.
+ * Es Client Component por el uso de estado, efectos y eventos.
+ * -----------------------------------------------------------------------------
+ */
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { api } from "../../../lib/api";
 import { Markdown } from "../../../components/markdown";
 import { GlobalNav } from "../../../components/global-nav";
 
+// Forma de un ejercicio dentro de una lección.
 interface ExerciseItem {
   id: string;
   title: string;
@@ -17,6 +27,7 @@ interface ExerciseItem {
   _count: { tests: number };
 }
 
+// Forma de una lección (clase).
 interface LessonItem {
   id: string;
   slug: string;
@@ -27,6 +38,7 @@ interface LessonItem {
   exercises: ExerciseItem[];
 }
 
+// Forma de un módulo/sección del curso.
 interface ModuleItem {
   id: string;
   slug: string;
@@ -38,6 +50,7 @@ interface ModuleItem {
   lessons: LessonItem[];
 }
 
+// Forma del curso completo con sus módulos.
 interface TrackDetail {
   id: string;
   slug: string;
@@ -48,26 +61,39 @@ interface TrackDetail {
   modules: ModuleItem[];
 }
 
+// Etiquetas legibles para el tipo de curso.
 const TYPE_LABEL: Record<TrackDetail["type"], string> = {
   JUNIOR: "Junior",
   MID: "Mid",
   SENIOR: "Senior",
 };
 
+// Etiquetas legibles para la dificultad de un ejercicio.
 const DIFF_LABEL: Record<ExerciseItem["difficulty"], string> = {
   BEGINNER: "Principiante",
   INTERMEDIATE: "Intermedio",
   ADVANCED: "Avanzado",
 };
 
+/**
+ * Página de detalle del curso.
+ *
+ * @param params Promesa con el parámetro dinámico `slug` de la URL.
+ */
 export default function TrackPage({ params }: { params: Promise<{ slug: string }> }) {
+  // Datos del curso cargado.
   const [track, setTrack] = useState<TrackDetail | null>(null);
+  // Id del módulo abierto en el acordeón (null = todos cerrados).
   const [openSection, setOpenSection] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Set con los ids de las lecciones ya completadas (búsqueda rápida).
   const [completed, setCompleted] = useState<Set<string>>(new Set());
+  // null = aún comprobando sesión; true/false = hay o no sesión.
   const [loggedIn, setLoggedIn] = useState<boolean | null>(null);
+  // Id de la lección que se está marcando como completada (para deshabilitar el botón).
   const [marking, setMarking] = useState<string | null>(null);
 
+  // Resuelve el slug y carga el curso; abre la primera sección por defecto.
   useEffect(() => {
     params
       .then((p) => api.getTrack(p.slug))
@@ -78,6 +104,8 @@ export default function TrackPage({ params }: { params: Promise<{ slug: string }
       .catch((err) => setError(err instanceof Error ? err.message : "Error inesperado"));
   }, [params]);
 
+  // Carga el progreso del usuario para saber qué clases ya completó.
+  // Si falla (sin sesión), se marca loggedIn = false.
   useEffect(() => {
     api
       .getMyProgress()
@@ -88,6 +116,10 @@ export default function TrackPage({ params }: { params: Promise<{ slug: string }
       .catch(() => setLoggedIn(false));
   }, []);
 
+  /**
+   * Abre/cierra una sección del acordeón. Si hay sesión, registra el inicio
+   * de la primera clase del módulo (sin bloquear la navegación si falla).
+   */
   async function handleOpenSection(moduleId: string | null) {
     setOpenSection(moduleId);
     if (moduleId && loggedIn && track) {
@@ -101,8 +133,9 @@ export default function TrackPage({ params }: { params: Promise<{ slug: string }
     }
   }
 
+  /** Marca una clase como completada y refresca el progreso local. */
   async function handleComplete(lessonId: string) {
-    if (!loggedIn) return;
+    if (!loggedIn) return; // solo usuarios con sesión pueden completar
     setMarking(lessonId);
     try {
       await api.completeLesson(lessonId);
@@ -135,8 +168,10 @@ export default function TrackPage({ params }: { params: Promise<{ slug: string }
             {track.description && <p>{track.description}</p>}
           </section>
 
+          {/* Recorre cada módulo y lo renderiza como una sección acordeón */}
           {track.modules.map((mod) => {
-            const isOpen = openSection === mod.id;
+            const isOpen = openSection === mod.id; // ¿esta sección está abierta?
+            // Todos los ejercicios de todas las clases del módulo.
             const activities = mod.lessons.flatMap((l) => l.exercises);
             return (
               <section
@@ -144,6 +179,7 @@ export default function TrackPage({ params }: { params: Promise<{ slug: string }
                 className="card"
                 style={{ marginBottom: 14, padding: 0, overflow: "hidden" }}
               >
+                {/* Cabecera clickeable del acordeón (abre/cierra la sección) */}
                 <button
                   type="button"
                   className="sec-head"
@@ -163,7 +199,7 @@ export default function TrackPage({ params }: { params: Promise<{ slug: string }
 
                     <h3 className="mod-title">Clases de la sección</h3>
                     {mod.lessons.map((lesson) => {
-                      const isDone = completed.has(lesson.id);
+                      const isDone = completed.has(lesson.id); // ¿ya está completada?
                       return (
                         <article key={lesson.id} className="clase">
                           <div className="clase-head">

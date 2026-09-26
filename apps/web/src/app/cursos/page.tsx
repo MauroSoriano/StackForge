@@ -1,10 +1,19 @@
 "use client";
 
+/*
+ * page.tsx (ruta "/cursos")
+ * -----------------------------------------------------------------------------
+ * Catálogo de cursos. Carga la lista de tracks desde la API y los muestra como
+ * tarjetas; cada una enlaza al detalle del curso (/tracks/[slug]).
+ * Es Client Component porque usa useEffect/useState para traer datos.
+ * -----------------------------------------------------------------------------
+ */
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { api } from "../../lib/api";
 import { GlobalNav } from "../../components/global-nav";
 
+// Forma de cada curso (track) que devuelve la API.
 interface TrackItem {
   id: string;
   slug: string;
@@ -15,16 +24,20 @@ interface TrackItem {
   _count: { modules: number };
 }
 
+// Traduce el tipo de track a una etiqueta legible.
 const TYPE_LABEL: Record<TrackItem["type"], string> = {
   JUNIOR: "Junior",
   MID: "Mid",
   SENIOR: "Senior",
 };
 
+/** Página del catálogo de cursos. */
 export default function CursosPage() {
+  // Lista de cursos: null = cargando, [] = vacía, [...] = con datos.
   const [tracks, setTracks] = useState<TrackItem[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // Al montar, pide la lista de cursos una sola vez (dependencias vacías).
   useEffect(() => {
     api
       .listTracks()
@@ -35,6 +48,8 @@ export default function CursosPage() {
   return (
     <main className="container" style={{ paddingTop: "6vh" }}>
       <GlobalNav />
+
+      {/* Encabezado de la página */}
 
       <section className="hero">
         <div className="badge">
@@ -47,14 +62,17 @@ export default function CursosPage() {
         </p>
       </section>
 
+      {/* Error de carga */}
       {error && (
         <p className="auth-error" role="alert">
           {error}
         </p>
       )}
 
+      {/* Estado de carga (tracks todavía es null) */}
       {tracks === null && !error && <p>Cargando cursos…</p>}
 
+      {/* Grilla de tarjetas; cada tarjeta enlaza al detalle del curso */}
       <div className="grid" style={{ marginTop: 12 }}>
         {tracks?.map((track) => (
           <Link key={track.id} className="card" href={`/tracks/${track.slug}`}>

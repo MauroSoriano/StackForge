@@ -7,6 +7,7 @@ documento como ✅ (completo), 🟡 (parcial) o ⬜ (planeado) según avance.
 
 | Ruta                       | Contenido                                                    | Estado |
 | -------------------------- | ------------------------------------------------------------ | ------ |
+| `GUIA-DE-ESTUDIO.md`       | Guía para estudiar el código, la base de datos y las APIs    | ✅   |
 | `00-prompt-maestro.md`     | Requisitos del proyecto (resumen estructurado del Prompt Maestro) | ✅   |
 | `architecture/overview.md` | Visión de arquitectura por fases                             | 🟡     |
 | `phases/`                  | Explicación de cada fase (PHASE-XX)                          | 🟡     |

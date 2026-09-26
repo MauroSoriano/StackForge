@@ -15,17 +15,24 @@ datasource db {
 // Enums
 // ---------------------------------------------------------------------------
 
+/// Rol de una persona dentro de la plataforma.
+/// STUDENT = estudiante normal; ADMIN = administrador con permisos globales.
 enum UserRole {
   STUDENT
   ADMIN
 }
 
+/// Nivel del track (ruta de aprendizaje) según la experiencia objetivo.
+/// JUNIOR = base, MID = intermedio, SENIOR = avanzado.
 enum TrackType {
   JUNIOR
   MID
   SENIOR
 }
 
+/// Estado de avance de un módulo para un usuario (usado en UserProgress).
+/// LOCKED = bloqueado hasta cumplir requisitos, AVAILABLE = desbloqueado,
+/// IN_PROGRESS = en curso, COMPLETED = terminado.
 enum ModuleState {
   LOCKED
   AVAILABLE
@@ -33,6 +40,11 @@ enum ModuleState {
   COMPLETED
 }
 
+/// Estado del ciclo de vida de una entrega (Submission) y también del veredicto
+/// final de la IA (AIFeedback.verdict).
+/// RECEIVED = recibida, PROCESSING = en evaluación, PASSED = aprobada,
+/// PARTIAL = parcialmente correcta, NEEDS_WORK = requiere correcciones,
+/// ERROR = falló el procesamiento.
 enum SubmissionStatus {
   RECEIVED
   PROCESSING
@@ -42,17 +54,23 @@ enum SubmissionStatus {
   ERROR
 }
 
+/// Indica si un requisito de proyecto es obligatorio u opcional.
+/// REQUIRED = necesario para aprobar, OPTIONAL = recomendado.
 enum RequirementType {
   REQUIRED
   OPTIONAL
 }
 
+/// Nivel de dificultad de ejercicios y proyectos.
 enum Difficulty {
   BEGINNER
   INTERMEDIATE
   ADVANCED
 }
 
+/// Proveedor de IA usado para generar feedback.
+/// FREE = proveedor gratuito por defecto, OPENAI/GEMINI/OPENROUTER = servicios
+/// en la nube, LOCAL = modelo ejecutado localmente.
 enum AIProvider {
   FREE
   OPENAI
@@ -61,6 +79,7 @@ enum AIProvider {
   LOCAL
 }
 
+/// Modo de comportamiento del mentor IA según lo que necesita el estudiante.
 enum MentorMode {
   LEARN
   DEBUG
@@ -74,18 +93,25 @@ enum MentorMode {
 // Usuario
 // ---------------------------------------------------------------------------
 
+/// Cuenta principal de una persona usuaria. Es el nodo central del modelo:
+/// casi todas las demás entidades de progreso, entregas y logros cuelgan de aquí.
 model User {
   id               String            @id @default(cuid())
   email            String            @unique
+  // Nunca se guarda la contraseña en texto plano: solo su hash (bcrypt/argon2).
   passwordHash     String
   name             String?
   role             UserRole          @default(STUDENT)
   avatarUrl        String?
   phone            String?
   country          String?
+  // Relación 1:1 opcional con el perfil extendido (datos públicos/redes).
   profile          Profile?
+  // Proyectos de portfolio que la persona agrega a su perfil.
   portfolioProjects PortfolioProject[]
+  // Entregas (de proyectos y ejercicios) hechas por este usuario.
   submissions      Submission[]
+  // Progreso por track/módulo, lecciones, sesiones de estudio y habilidades.
   userProgress     UserProgress[]
   lessonProgress   LessonProgress[]
   studySessions    StudySession[]
@@ -95,8 +121,10 @@ model User {
   updatedAt        DateTime          @updatedAt
 }
 
+/// Datos opcionales de perfil ligados 1:1 a un User (bio, enlaces, zona horaria).
 model Profile {
   id           String   @id @default(cuid())
+  // Cada usuario tiene a lo sumo un perfil: userId es único.
   userId       String   @unique
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   githubUrl    String?
@@ -111,28 +139,36 @@ model Profile {
 // Contenido educativo: Track -> Module -> Lesson / Exercise / Project
 // ---------------------------------------------------------------------------
 
+/// Track = ruta de aprendizaje completa (por ejemplo "Backend con Node").
+/// Agrupa módulos ordenados y es la unidad de progreso de alto nivel.
 model Track {
   id          String     @id @default(cuid())
+  // slug = identificador legible y estable que usa el seed para hacer upsert.
   slug        String     @unique
   title       String
   description String?
   type        TrackType
   order       Int
   modules     Module[]
+  // Progreso de cada usuario en este track.
   userProgress UserProgress[]
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 }
 
+/// Módulo = sección temática dentro de un Track. Contiene lecciones,
+/// proyectos y material específico de Git.
 model Module {
   id                  String      @id @default(cuid())
   trackId             String
+  // onDelete: Cascade -> borrar el track borra sus módulos.
   track               Track       @relation(fields: [trackId], references: [id], onDelete: Cascade)
   slug                String
   title               String
   description         String?
   order               Int
   estimatedHours      Int?
+  // Si es true, el módulo arranca bloqueado hasta cumplir requisitos.
   lockedByDefault     Boolean     @default(false)
   lessons             Lesson[]
   projects            Project[]
@@ -141,16 +177,20 @@ model Module {
   createdAt           DateTime    @default(now())
   updatedAt           DateTime    @updatedAt
 
+  // Un mismo orden no puede repetirse dentro del mismo track.
   @@unique([trackId, order])
   @@index([trackId])
 }
 
+/// Lección = unidad de contenido teórico (texto markdown) dentro de un módulo.
+/// Puede tener ejercicios asociados.
 model Lesson {
   id             String     @id @default(cuid())
   moduleId       String
   module         Module     @relation(fields: [moduleId], references: [id], onDelete: Cascade)
   slug           String
   title          String
+  // Cuerpo de la lección en formato markdown.
   markdown       String
   order          Int
   durationMinutes Int?
@@ -159,10 +199,12 @@ model Lesson {
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt
 
+  // El slug de la lección es único dentro de su módulo (clave de upsert del seed).
   @@unique([moduleId, slug])
   @@index([moduleId, order])
 }
 
+/// Progreso de un usuario en una lección concreta (cuándo la empezó y terminó).
 model LessonProgress {
   id          String      @id @default(cuid())
   userId      String
@@ -170,16 +212,21 @@ model LessonProgress {
   lessonId    String
   lesson      Lesson      @relation(fields: [lessonId], references: [id], onDelete: Cascade)
   startedAt   DateTime    @default(now())
+  // null significa que aún no se completó.
   completedAt DateTime?
   updatedAt   DateTime    @updatedAt
 
+  // Un único registro de progreso por usuario y lección.
   @@unique([userId, lessonId])
   @@index([userId])
   @@index([lessonId])
 }
 
+/// Ejercicio práctico asociado opcionalmente a una lección. Tiene requisitos
+/// y tests (contenido) y recibe entregas (submissions) de los usuarios.
 model Exercise {
   id                   String                 @id @default(cuid())
+  // lessonId es opcional: un ejercicio podría no depender de una lección.
   lessonId             String?
   lesson               Lesson?                @relation(fields: [lessonId], references: [id], onDelete: Cascade)
   title                String
@@ -187,6 +234,7 @@ model Exercise {
   instructions         String
   order                Int?
   difficulty           Difficulty             @default(BEGINNER)
+  // Número máximo de intentos permitidos (null = sin límite).
   maxAttempts          Int?
   requirements         ExerciseRequirement[]
   tests                ExerciseTest[]
@@ -197,22 +245,26 @@ model Exercise {
   @@index([lessonId])
 }
 
+/// Requisito que un ejercicio debe cumplir (se muestra al estudiante).
 model ExerciseRequirement {
   id          String  @id @default(cuid())
   exerciseId  String
   exercise    Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
   description String
+  // true = obligatorio para aprobar; false = recomendado.
   isMandatory Boolean @default(true)
   order       Int?
 
   @@index([exerciseId])
 }
 
+/// Prueba/verificación que corre el evaluador sobre la entrega de un ejercicio.
 model ExerciseTest {
   id          String   @id @default(cuid())
   exerciseId  String
   exercise    Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
   name        String
+  // Comando opcional que ejecuta la prueba.
   command     String?
   description String?
   order       Int?
@@ -220,13 +272,17 @@ model ExerciseTest {
   @@index([exerciseId])
 }
 
+/// Proyecto integrador, opcionalmente ligado a un módulo. Es evaluado
+/// mediante entregas (submissions) y requisitos (ProjectRequirement).
 model Project {
   id            String              @id @default(cuid())
+  // Un proyecto puede existir sin módulo (moduleId nullable).
   moduleId      String?
   module        Module?             @relation(fields: [moduleId], references: [id], onDelete: Cascade)
   slug          String
   title         String
   description   String?
+  // Objetivos del proyecto (texto descriptivo).
   objectives    String
   durationHours Int?
   order         Int?
@@ -239,11 +295,13 @@ model Project {
   @@index([moduleId, order])
 }
 
+/// Requisito de un proyecto, con criterios de aceptación y si es obligatorio.
 model ProjectRequirement {
   id                  String          @id @default(cuid())
   projectId           String
   project             Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
   description         String
+  // Cómo se comprueba que el requisito se cumplió.
   acceptanceCriteria  String?
   kind                RequirementType @default(REQUIRED)
   order               Int?
@@ -255,25 +313,32 @@ model ProjectRequirement {
 // Sistema de entrega y evaluación
 // ---------------------------------------------------------------------------
 
+/// Entrega de un proyecto o de un ejercicio por parte de un usuario.
+/// Guarda el archivo comprimido subido y el resultado de la evaluación.
 model Submission {
   id               String           @id @default(cuid())
+  // Una entrega es de un proyecto O de un ejercicio (relaciones opcionales).
   projectId        String?
   project          Project?         @relation(fields: [projectId], references: [id], onDelete: Cascade)
   exerciseId       String?
   exercise         Exercise?        @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
   userId           String
   user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Número de intento (1, 2, 3...) del usuario sobre ese proyecto/ejercicio.
   attemptNumber    Int
   status           SubmissionStatus @default(RECEIVED)
+  // Clave del archivo subido en el almacenamiento (S3 u similar).
   archiveKey       String?
   archiveSizeBytes Int?
   fileCount        Int?
+  // Resultado estructurado del procesamiento/evaluación.
   result           Json?
   submittedAt      DateTime         @default(now())
   processedAt      DateTime?
   files            SubmissionFile[]
   feedbacks        AIFeedback[]
 
+  // Un intento es único por proyecto+usuario y por ejercicio+usuario.
   @@unique([projectId, userId, attemptNumber])
   @@unique([exerciseId, userId, attemptNumber])
   @@index([userId])
@@ -281,33 +346,40 @@ model Submission {
   @@index([projectId])
 }
 
+/// Archivo individual extraído del archivo comprimido de una entrega.
 model SubmissionFile {
   id           String     @id @default(cuid())
   submissionId String
   submission   Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
   path         String
   sizeBytes    Int?
+  // Hash para detectar duplicados/cambios de contenido.
   sha256       String?    @default("")
+  // true si el archivo se excluyó de la evaluación (por ejemplo node_modules).
   excluded     Boolean    @default(false)
   content      String     @default("")
-
-  @@index([submissionId])
 }
 
+/// Resultado de la evaluación con IA de una entrega: veredicto, puntaje,
+/// hallazgos y recomendaciones. Una entrega puede tener varios feedbacks.
 model AIFeedback {
   id                   String           @id @default(cuid())
   submissionId         String
   submission           Submission       @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  // Proveedor y modelo de IA que generó este análisis.
   provider             AIProvider       @default(FREE)
   modelName            String?
   status               String           @default("ok")
+  // Veredicto del análisis (mismos valores que el estado de una entrega).
   verdict              SubmissionStatus?
   overallScore         Int?
+  // Resultados por requisito, problemas encontrados y recomendaciones (JSON).
   requirementResults   Json?
   codeQuality          String?
   problemsFound        Json?
   recommendations      Json?
   nextSteps            String?
+  // Respuesta cruda del proveedor, para depuración.
   raw                  Json?
   latencyMs            Int?
   createdAt            DateTime         @default(now())
@@ -319,22 +391,28 @@ model AIFeedback {
 // Progreso y habilidades
 // ---------------------------------------------------------------------------
 
+/// Progreso de un usuario dentro de un track (y opcionalmente de un módulo):
+/// estado, porcentaje y fecha de finalización.
 model UserProgress {
   id          String       @id @default(cuid())
   userId      String
   user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   trackId     String
   track       Track        @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  // Si es null el registro representa el progreso global del track.
   moduleId    String?
   state       ModuleState  @default(LOCKED)
+  // Porcentaje de avance (0-100).
   progress    Int          @default(0)
   completedAt DateTime?
   updatedAt   DateTime     @updatedAt
 
+  // Único por usuario+track+módulo (moduleId null = progreso del track completo).
   @@unique([userId, trackId, moduleId])
   @@index([userId])
 }
 
+/// Catálogo de habilidades (skills) que la plataforma puede medir.
 model Skill {
   id          String  @id @default(cuid())
   name        String  @unique
@@ -343,24 +421,29 @@ model Skill {
   userSkills  UserSkill[]
 }
 
+/// Nivel de un usuario en una habilidad concreta (tabla intermedia User-Skill).
 model UserSkill {
   id          String   @id @default(cuid())
   userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   skillId     String
   skill       Skill    @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  // Nivel de dominio (0 = sin dominio, valores mayores = más avanzado).
   proficiency Int      @default(0)
   updatedAt   DateTime @updatedAt
 
+  // Una sola fila por usuario y habilidad.
   @@unique([userId, skillId])
   @@index([userId])
 }
 
+/// Sesión de estudio: registra cuánto tiempo dedica una persona a estudiar.
 model StudySession {
   id              String   @id @default(cuid())
   userId          String
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   startedAt       DateTime @default(now())
+  // null mientras la sesión sigue abierta.
   endedAt         DateTime?
   durationMinutes Int?
 
@@ -371,25 +454,30 @@ model StudySession {
 // Educación Git/GitHub
 // ---------------------------------------------------------------------------
 
+/// Lección corta centrada en un comando de Git/GitHub.
 model GitLesson {
   id          String  @id @default(cuid())
   moduleId    String?
   module      Module? @relation(fields: [moduleId], references: [id], onDelete: Cascade)
   title       String
+  // Comando de Git que enseña esta lección (por ejemplo "git commit").
   command     String?
   description String
   order       Int
+  // Nivel de profundidad (1 = básico, valores mayores = más avanzado).
   level       Int     @default(1)
 
   @@index([moduleId, order])
 }
 
+/// Ejercicio práctico de Git, definido como una secuencia de pasos (JSON).
 model GitExercise {
   id          String  @id @default(cuid())
   moduleId    String?
   module      Module? @relation(fields: [moduleId], references: [id], onDelete: Cascade)
   title       String
   description String
+  // Lista de pasos a seguir por el estudiante (estructura libre en JSON).
   steps       Json
   order       Int
 
@@ -400,6 +488,7 @@ model GitExercise {
 // Portfolio
 // ---------------------------------------------------------------------------
 
+/// Proyecto del portfolio personal de un usuario (no es una entrega del curso).
 model PortfolioProject {
   id           String   @id @default(cuid())
   userId       String
@@ -408,7 +497,9 @@ model PortfolioProject {
   description  String?
   githubUrl    String?
   liveUrl      String?
+  // Tecnologías usadas; Prisma lo mapea a un array de PostgreSQL.
   technologies String[] @default([])
+  // true cuando la plataforma verificó que el proyecto existe/es válido.
   verified     Boolean  @default(false)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -420,8 +511,10 @@ model PortfolioProject {
 // Logros
 // ---------------------------------------------------------------------------
 
+/// Logro o insignia que la plataforma puede otorgar.
 model Achievement {
   id             String            @id @default(cuid())
+  // Identificador legible y estable del logro.
   slug           String            @unique
   title          String
   description    String?
@@ -429,13 +522,16 @@ model Achievement {
   users          UserAchievement[]
 }
 
+/// Relación entre un usuario y un logro obtenido (tabla intermedia User-Achievement).
 model UserAchievement {
   id            String      @id @default(cuid())
   userId        String
   user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   achievementId String
   achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+  // Fecha en que se otorgó el logro.
   awardedAt     DateTime    @default(now())
 
+  // Un logro solo puede otorgarse una vez por usuario.
   @@unique([userId, achievementId])
 }

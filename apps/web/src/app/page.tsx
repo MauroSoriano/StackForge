@@ -1,6 +1,15 @@
+/*
+ * page.tsx (portada "/")
+ * -----------------------------------------------------------------------------
+ * Página de inicio pública de StackForge. Es un Server Component (no lleva
+ * "use client") que muestra secciones estáticas de marketing: hero, beneficios,
+ * roadmap de 12 semanas, evaluación, Git/GitHub y preguntas frecuentes.
+ * -----------------------------------------------------------------------------
+ */
 import Link from "next/link";
 import { GlobalNav } from "../components/global-nav";
 
+// Datos estáticos del roadmap (semanas, título, descripción y etiqueta).
 const phases = [
   {
     weeks: "SEM 01–02",
@@ -40,6 +49,7 @@ const phases = [
   },
 ];
 
+// Filas de ejemplo que simulan un resultado de revisión automática de código.
 const checkRows = [
   { state: "PASS", label: "La API implementa CRUD de tareas" },
   { state: "PASS", label: "Autenticación JWT con contraseñas hasheadas" },
@@ -48,6 +58,7 @@ const checkRows = [
   { state: "NEEDS WORK", label: "El estado de la UI no se sincroniza tras eliminar una tarea" },
 ];
 
+// Preguntas frecuentes (pares pregunta/respuesta) mostradas en un acordeón.
 const faqs = [
   {
     q: "¿Necesito saber programar antes de empezar?",
@@ -71,9 +82,11 @@ const faqs = [
   },
 ];
 
+/** Componente de la portada. Renderiza todas las secciones de la landing. */
 export default function Home() {
   return (
     <main>
+      {/* Barra de navegación con enlaces a las secciones internas */}
       <div className="container">
         {/* Nav */}
         <GlobalNav

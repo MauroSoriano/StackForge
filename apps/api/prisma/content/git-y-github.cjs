@@ -1,6 +1,51 @@
 "use strict";
 // Contenido del track: Git y GitHub.
 
+/* ===========================================================================
+ * ESTRUCTURA DEL OBJETO EXPORTADO (un archivo .cjs = un track del curso)
+ * ---------------------------------------------------------------------------
+ * module.exports = {
+ *   slug:        string   // identificador único del track (clave del seed)
+ *   title:       string   // nombre visible del track
+ *   description: string   // resumen de lo que enseña el track
+ *   type:        string   // TrackType: "JUNIOR" | "MID" | "SENIOR"
+ *   order:       number   // posición del track dentro del curso
+ *   modules: [            // módulos del track, en orden
+ *     {
+ *       slug:           string  // identificador del módulo dentro del track
+ *       title:          string  // nombre visible del módulo
+ *       description:    string  // resumen del módulo
+ *       order:          number  // posición del módulo dentro del track
+ *       estimatedHours: number  // horas estimadas de trabajo
+ *       lessons: [              // lecciones del módulo
+ *         {
+ *           slug:            string   // identificador de la lección
+ *           title:           string   // nombre visible de la lección
+ *           markdown:        string   // cuerpo de la lección (texto markdown)
+ *           order:           number   // posición de la lección dentro del módulo
+ *           durationMinutes: number   // duración estimada en minutos
+ *           exercises: [              // ejercicios prácticos de la lección
+ *             {
+ *               title:        string    // nombre del ejercicio (clave natural del seed)
+ *               description:  string    // resumen breve del ejercicio
+ *               instructions: string    // consigna detallada para el estudiante
+ *               difficulty:   string    // Difficulty: "BEGINNER" | "INTERMEDIATE" | "ADVANCED"
+ *               maxAttempts:  number    // intentos máximos permitidos
+ *               requirements: string[]  // requisitos que debe cumplir la entrega
+ *               tests:        string[]  // pruebas/verificaciones que se ejecutan
+ *             }
+ *           ]
+ *         }
+ *       ]
+ *     }
+ *   ]
+ * }
+ *
+ * NOTA: el contenido de los strings `markdown` es texto del curso y NO debe
+ * modificarse desde aquí; este archivo solo aporta datos al seed.
+ * ===========================================================================
+ */
+
 module.exports = {
   slug: "git-y-github",
   title: "Git y GitHub",

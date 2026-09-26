@@ -1,3 +1,11 @@
+/**
+ * ARCHIVO: curriculum.service.ts
+ * -------------------------------
+ * Capa de acceso a datos del dominio CURRÍCULUM. Usa PrismaService para leer
+ * tracks, módulos, lecciones y ejercicios. Solo expone consultas de lectura;
+ * el desbloqueo por progreso vive en ProgressService.
+ */
+
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service.js";
 
@@ -8,8 +16,13 @@ import { PrismaService } from "../prisma/prisma.service.js";
  */
 @Injectable()
 export class CurriculumService {
+  // Cliente Prisma inyectado; se usa para todas las consultas a la base de datos.
   constructor(private readonly prisma: PrismaService) {}
 
+  /**
+   * Lista todos los tracks con un resumen (incluye el conteo de módulos).
+   * @returns Tracks ordenados ascendentemente por su campo `order`.
+   */
   listTracks() {
     return this.prisma.track.findMany({
       select: {
@@ -76,6 +89,13 @@ export class CurriculumService {
     });
   }
 
+  /**
+   * Obtiene un track por su slug con toda su jerarquía (módulos, lecciones y
+   * ejercicios).
+   * @param slug Identificador legible del track.
+   * @returns El track completo.
+   * @throws NotFoundException si el track no existe.
+   */
   async getTrack(slug: string) {
     const track = await this.prisma.track.findUnique({
       where: { slug },
@@ -130,6 +150,12 @@ export class CurriculumService {
     return track;
   }
 
+  /**
+   * Obtiene una lección por su id, con su módulo/track y sus ejercicios.
+   * @param lessonId Identificador (cuid) de la lección.
+   * @returns La lección completa.
+   * @throws NotFoundException si la lección no existe.
+   */
   async getLesson(lessonId: string) {
     const lesson = await this.prisma.lesson.findUnique({
       where: { id: lessonId },
